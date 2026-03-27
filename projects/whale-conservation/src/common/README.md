@@ -58,10 +58,70 @@ app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 
 - `TransformInterceptor` - 统一响应格式封装
 - `LoggingInterceptor` - 请求日志记录
+- `CacheInterceptor` - 响应缓存 (支持自定义缓存键和 TTL)
 
-待实现:
+### 📁 Interceptors (拦截器) - 详细用法
 
-- `CacheInterceptor` - 响应缓存
+**CacheInterceptor 使用示例:**
+
+```typescript
+import { UseInterceptors } from '@nestjs/common';
+import { CacheInterceptor, CacheKey, CacheTTL } from '@/common/interceptors';
+
+// 基础用法 - 默认 5 分钟缓存
+@UseInterceptors(CacheInterceptor)
+@Get('species')
+findAllSpecies() {
+  return this.speciesService.findAll();
+}
+
+// 自定义缓存时间 - 1 小时
+@UseInterceptors(CacheInterceptor)
+@CacheTTL(3600)
+@Get('statistics')
+getStatistics() {
+  return this.statsService.getStatistics();
+}
+
+// 自定义缓存键
+@UseInterceptors(CacheInterceptor)
+@CacheKey('home-page-data')
+@Get('home')
+getHomeData() {
+  return this.homeService.getData();
+}
+```
+
+**缓存装饰器:**
+
+| 装饰器 | 说明 | 参数 |
+|--------|------|------|
+| `@CacheKey(key)` | 自定义缓存键 | `key: string` - 缓存键名 |
+| `@CacheTTL(ttl)` | 自定义缓存时间 | `ttl: number` - 缓存时间 (秒) |
+
+**响应头:**
+
+- `X-Cache: HIT` - 缓存命中
+- `X-Cache: MISS` - 缓存未命中
+
+**缓存管理:**
+
+```typescript
+// 在 Service 中注入 CacheInterceptor
+constructor(private cacheInterceptor: CacheInterceptor) {}
+
+// 清除指定缓存
+this.cacheInterceptor.clearCache('home-page-data');
+
+// 清除所有缓存
+this.cacheInterceptor.clearAllCache();
+
+// 获取缓存统计
+const stats = this.cacheInterceptor.getCacheStats();
+console.log(stats); // { size: 5, keys: ['cache:/api/v1/...', ...] }
+```
+
+---
 
 ### 📁 Pipes (验证管道)
 
@@ -168,4 +228,4 @@ getProfile(@CurrentUser() user: User) {
 
 ---
 
-*最后更新：2026-03-28 01:45*
+*最后更新：2026-03-28 02:45*
