@@ -46,10 +46,11 @@ app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 ✅ 已实现:
 
 - `JwtAuthGuard` - JWT 认证守卫 (支持 @Public() 装饰器跳过认证)
+- `RolesGuard` - RBAC 角色权限守卫 (配合 @Roles() 装饰器使用)
 
 待实现:
 
-- `RolesGuard` - RBAC 角色权限守卫
+- (无)
 
 ### 📁 Interceptors (拦截器)
 
@@ -72,11 +73,47 @@ app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 
 ### 📁 Decorators (装饰器)
 
-待实现:
+✅ 已实现:
 
 - `@Public()` - 标记公开路由 (跳过认证)
-- `@Roles(...)` - 角色权限装饰器
+- `@Roles(...)` - 角色权限装饰器 (配合 RolesGuard 使用)
 - `@CurrentUser()` - 获取当前用户装饰器
+
+待实现:
+
+- (无)
+
+**装饰器使用示例:**
+
+```typescript
+// 角色权限控制
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.ADMIN, UserRole.RESEARCHER)
+@Delete(':id')
+remove(@Param('id') id: string) {
+  return this.speciesService.remove(id);
+}
+
+// 获取当前用户信息
+@UseGuards(JwtAuthGuard)
+@Get('profile')
+getProfile(@CurrentUser() user: User) {
+  return {
+    username: user.username,
+    role: user.role,
+    nickname: user.nickname,
+  };
+}
+```
+
+**角色权限说明:**
+
+| 角色 | 说明 | 权限范围 |
+|------|------|----------|
+| `ADMIN` | 系统管理员 | 全部权限 |
+| `RESEARCHER` | 研究员 | 数据录入、编辑、分析 |
+| `VOLUNTEER` | 志愿者 | 数据查看、有限录入 |
+| `PUBLIC` | 公众用户 | 仅公开数据查看 |
 
 ---
 
@@ -89,4 +126,4 @@ app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 
 ---
 
-*最后更新：2026-03-27 22:35*
+*最后更新：2026-03-27 23:35*
