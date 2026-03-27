@@ -3,3 +3,4 @@
  */
 
 export { ParseOptionalIntPipe, type ParseOptionalIntOptions } from './parse-optional-int.pipe';
+export { ParseOptionalFloatPipe, type ParseOptionalFloatOptions } from './parse-optional-float.pipe';
