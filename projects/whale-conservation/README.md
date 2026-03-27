@@ -89,7 +89,8 @@
 ### 环境要求
 
 - Docker & Docker Compose
-- Node.js 20+ (可选，用于后端开发)
+- Node.js 20+ (后端开发)
+- npm 或 pnpm
 
 ### 一键启动开发环境
 
@@ -121,6 +122,26 @@ docker compose up -d
 ./scripts/init-db.sh
 ```
 
+### 启动后端 API
+
+```bash
+# 进入后端目录
+cd src
+
+# 安装依赖
+npm install
+
+# 复制环境配置
+cp .env.example .env
+
+# 启动开发服务器
+npm run start:dev
+```
+
+启动后可访问：
+- **API 端点**: http://localhost:3000/api/v1
+- **Swagger 文档**: http://localhost:3000/api/docs
+
 ### 查看服务日志
 
 ```bash
@@ -137,11 +158,18 @@ docker compose down
 
 ## 📅 开发路线图
 
-### Phase 1 - 基础架构 (2026 Q2)
-- [ ] 项目脚手架搭建
-- [ ] 数据库设计与建模
-- [ ] 用户认证与权限系统
-- [ ] 基础 API 开发
+### Phase 1 - 基础架构 (2026 Q2) ✅
+- [x] 项目脚手架搭建
+- [x] 数据库设计与建模
+- [x] 数据字典文档
+- [x] 数据库迁移脚本
+- [x] API 设计文档
+- [x] 数据库初始化脚本
+- [x] Docker 开发环境配置
+- [x] NestJS 后端脚手架
+- [x] 用户认证模块 (JWT + RBAC)
+- [x] 基础 CRUD API (Species, Whales, Sightings, Stations)
+- [x] 统计分析 API
 
 ### Phase 2 - 核心功能 (2026 Q3)
 - [ ] 鲸鱼个体管理模块
