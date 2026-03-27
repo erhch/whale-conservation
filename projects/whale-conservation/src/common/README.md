@@ -75,13 +75,30 @@ app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 
 ✅ 已实现:
 
-- `@Public()` - 标记公开路由 (跳过认证)
+- `@Public()` - 标记公开路由 (跳过 JWT 认证)
 - `@Roles(...)` - 角色权限装饰器 (配合 RolesGuard 使用)
 - `@CurrentUser()` - 获取当前用户装饰器
 
 待实现:
 
 - (无)
+
+**@Public() 使用示例:**
+
+```typescript
+// 公开路由 - 无需登录即可访问
+@Public()
+@Post('login')
+login(@Body() dto: LoginDto) {
+  return this.authService.login(dto);
+}
+
+@Public()
+@Get('species')
+findAllSpecies() {
+  return this.speciesService.findAll();
+}
+```
 
 **装饰器使用示例:**
 
@@ -126,4 +143,4 @@ getProfile(@CurrentUser() user: User) {
 
 ---
 
-*最后更新：2026-03-27 23:35*
+*最后更新：2026-03-28 00:45*
