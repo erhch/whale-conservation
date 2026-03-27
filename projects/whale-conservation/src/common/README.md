@@ -121,6 +121,69 @@ const stats = this.cacheInterceptor.getCacheStats();
 console.log(stats); // { size: 5, keys: ['cache:/api/v1/...', ...] }
 ```
 
+### 🔄 缓存失效最佳实践
+
+**何时清除缓存:**
+
+| 操作类型 | 需要清除的缓存 |
+|----------|----------------|
+| 创建资源 | 列表页缓存 (如 `cache:/api/v1/whales`) |
+| 更新资源 | 详情缓存 + 列表缓存 |
+| 删除资源 | 详情缓存 + 列表缓存 |
+| 批量操作 | 相关列表缓存 |
+
+**Service 示例:**
+
+```typescript
+@Injectable()
+export class WhalesService {
+  constructor(
+    private prisma: PrismaService,
+    private cacheInterceptor: CacheInterceptor,
+  ) {}
+
+  // 创建鲸鱼个体 - 清除列表缓存
+  async create(createWhaleDto: CreateWhaleDto) {
+    const result = await this.prisma.whale.create({ data: createWhaleDto });
+    
+    // 清除列表缓存
+    this.cacheInterceptor.clearCache('cache:/api/v1/whales');
+    
+    return result;
+  }
+
+  // 更新鲸鱼个体 - 清除详情 + 列表缓存
+  async update(id: string, updateWhaleDto: UpdateWhaleDto) {
+    const result = await this.prisma.whale.update({
+      where: { id },
+      data: updateWhaleDto,
+    });
+    
+    // 清除详情缓存和列表缓存
+    this.cacheInterceptor.clearCache(`cache:/api/v1/whales/${id}`);
+    this.cacheInterceptor.clearCache('cache:/api/v1/whales');
+    
+    return result;
+  }
+
+  // 删除鲸鱼个体 - 清除详情 + 列表缓存
+  async remove(id: string) {
+    await this.prisma.whale.delete({ where: { id } });
+    
+    // 清除详情缓存和列表缓存
+    this.cacheInterceptor.clearCache(`cache:/api/v1/whales/${id}`);
+    this.cacheInterceptor.clearCache('cache:/api/v1/whales');
+  }
+}
+```
+
+**注意事项:**
+
+1. ⚠️ **缓存键匹配** - 确保清除缓存时使用的键与实际缓存键完全一致
+2. ⚠️ **顺序问题** - 先执行数据库操作，再清除缓存
+3. ✅ **乐观策略** - 如果缓存清除失败，不影响主流程
+4. ✅ **日志记录** - 建议在清除缓存时添加日志便于调试
+
 ---
 
 ### 📁 Pipes (验证管道)
@@ -228,4 +291,4 @@ getProfile(@CurrentUser() user: User) {
 
 ---
 
-*最后更新：2026-03-28 02:45*
+*最后更新：2026-03-28 03:45*
