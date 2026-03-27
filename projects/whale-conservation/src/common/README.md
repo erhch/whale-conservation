@@ -65,9 +65,34 @@ app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 
 ### 📁 Pipes (验证管道)
 
+✅ 已实现:
+
+- `ParseOptionalIntPipe` - 可选整数解析管道 (支持默认值、范围验证)
+
+**使用示例:**
+
+```typescript
+import { ParseOptionalIntPipe } from '@/common/pipes';
+
+// 分页参数 - 默认值为 1，最小值为 1
+@Query('page', new ParseOptionalIntPipe({ defaultValue: 1, min: 1 }))
+page: number;
+
+// 每页数量 - 默认值为 20，范围 1-100
+@Query('pageSize', new ParseOptionalIntPipe({ defaultValue: 20, min: 1, max: 100 }))
+pageSize: number;
+```
+
+**选项说明:**
+
+| 选项 | 类型 | 说明 |
+|------|------|------|
+| `defaultValue` | `number` | 当参数为空时的默认值 |
+| `min` | `number` | 最小值限制 |
+| `max` | `number` | 最大值限制 |
+
 待实现:
 
-- `ParseIntPipe` - 整数解析 (NestJS 内置)
 - `ParseUUIDPipe` - UUID 解析 (NestJS 内置)
 - 自定义业务验证管道
 
@@ -143,4 +168,4 @@ getProfile(@CurrentUser() user: User) {
 
 ---
 
-*最后更新：2026-03-28 00:45*
+*最后更新：2026-03-28 01:45*
