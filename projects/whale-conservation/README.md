@@ -84,6 +84,57 @@
 | **部署** | Docker, Kubernetes, GitHub Actions |
 | **监控** | Prometheus, Grafana, ELK Stack |
 
+## 🚀 快速开始
+
+### 环境要求
+
+- Docker & Docker Compose
+- Node.js 20+ (可选，用于后端开发)
+
+### 一键启动开发环境
+
+```bash
+# 克隆项目
+git clone https://github.com/erhch/whale-conservation.git
+cd whale-conservation
+
+# 启动所有服务 (PostgreSQL, Redis, MinIO, Adminer)
+./scripts/start-dev.sh
+```
+
+启动后可访问：
+- **Adminer (数据库管理)**: http://localhost:8080
+- **MinIO Console (对象存储)**: http://localhost:9001
+- **PostgreSQL**: localhost:5432
+
+### 手动启动 Docker 服务
+
+```bash
+cd docker
+docker compose up -d
+```
+
+### 初始化数据库
+
+```bash
+# 运行数据库初始化和种子数据
+./scripts/init-db.sh
+```
+
+### 查看服务日志
+
+```bash
+cd docker
+docker compose logs -f
+```
+
+### 停止服务
+
+```bash
+cd docker
+docker compose down
+```
+
 ## 📅 开发路线图
 
 ### Phase 1 - 基础架构 (2026 Q2)

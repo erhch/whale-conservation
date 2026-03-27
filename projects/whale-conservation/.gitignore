@@ -1,0 +1,75 @@
+# 🐋 鲸创管理系统 - Git Ignore 配置
+
+# 依赖目录
+node_modules/
+vendor/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# 环境配置
+.env
+.env.local
+.env.*.local
+*.env
+
+# 构建输出
+dist/
+build/
+*.egg-info/
+*.egg
+
+# IDE 和编辑器
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 日志文件
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 测试覆盖率
+coverage/
+*.lcov
+.nyc_output/
+
+# Docker
+docker-compose.override.yml
+.docker/
+
+# 数据库
+*.db
+*.sqlite
+*.sqlite3
+
+# 临时文件
+tmp/
+temp/
+*.tmp
+*.bak
+
+# 敏感信息
+secrets/
+keys/
+*.pem
+*.key
+credentials.json
+
+# 上传文件
+uploads/
+media/
+storage/
+
+# MinIO 数据 (本地开发)
+minio_data/
+
+# 本地配置
+config.local.*
+settings.local.*
