@@ -11,6 +11,7 @@ import * as compression from 'compression';
 import * as helmet from 'helmet';
 
 import { AppModule } from './app.module';
+import { HttpExceptionFilter, AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -21,6 +22,9 @@ async function bootstrap() {
   // 安全中间件
   app.use(helmet());
   app.use(compression());
+
+  // 全局异常过滤器
+  app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 
   // 全局前缀
   app.setGlobalPrefix('api/v1');
@@ -50,11 +54,13 @@ async function bootstrap() {
     .setVersion('1.0')
     .addBearerAuth()
     .addTag('auth', '用户认证')
+    .addTag('auth', '用户认证')
     .addTag('species', '物种管理')
     .addTag('whales', '鲸鱼个体管理')
     .addTag('sightings', '观测记录')
     .addTag('stations', '监测站点')
     .addTag('stats', '统计分析')
+    .addTag('health', '健康检查')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
