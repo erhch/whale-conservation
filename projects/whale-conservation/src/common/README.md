@@ -59,6 +59,7 @@ app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 - `TransformInterceptor` - 统一响应格式封装
 - `LoggingInterceptor` - 请求日志记录
 - `CacheInterceptor` - 响应缓存 (支持自定义缓存键和 TTL)
+- `TimeoutInterceptor` - 请求超时控制 (防止慢查询阻塞资源)
 
 ### 📁 Interceptors (拦截器) - 详细用法
 
@@ -183,6 +184,68 @@ export class WhalesService {
 2. ⚠️ **顺序问题** - 先执行数据库操作，再清除缓存
 3. ✅ **乐观策略** - 如果缓存清除失败，不影响主流程
 4. ✅ **日志记录** - 建议在清除缓存时添加日志便于调试
+
+### 📁 Interceptors (拦截器) - TimeoutInterceptor
+
+**TimeoutInterceptor 使用示例:**
+
+```typescript
+import { UseInterceptors } from '@nestjs/common';
+import { TimeoutInterceptor, Timeout } from '@/common/interceptors';
+
+// 基础用法 - 默认 30 秒超时
+@UseInterceptors(TimeoutInterceptor)
+@Get('species')
+findAllSpecies() {
+  return this.speciesService.findAll();
+}
+
+// 自定义超时时间 - 60 秒 (适用于复杂查询)
+@UseInterceptors(TimeoutInterceptor)
+@Timeout(60000)
+@Get('analytics/yearly')
+getYearlyAnalytics() {
+  return this.analyticsService.getYearlyReport();
+}
+
+// 快速接口 - 5 秒超时 (健康检查等)
+@UseInterceptors(TimeoutInterceptor)
+@Timeout(5000)
+@Get('health')
+healthCheck() {
+  return this.healthService.check();
+}
+```
+
+**超时时间建议:**
+
+| 接口类型 | 建议超时 | 说明 |
+|----------|----------|------|
+| 简单查询 | 5-10 秒 | 单表查询、缓存命中 |
+| 常规 API | 30 秒 | 默认值，适用于大多数场景 |
+| 复杂统计 | 60 秒 | 多表关联、聚合计算 |
+| 数据导出 | 120 秒 | 大数据量导出 (建议改用异步任务) |
+| 健康检查 | 5 秒 | 快速失败，便于监控 |
+
+**注意事项:**
+
+1. ⚠️ **超时异常** - 超时后抛出 `RequestTimeoutException` (HTTP 408)
+2. ⚠️ **数据库查询** - 超时不会取消数据库查询，仅中断响应 (建议在数据库层也设置查询超时)
+3. ✅ **异步任务** - 长时间运行的任务建议使用异步队列 (Bull/Agenda) + 轮询/回调
+4. ✅ **监控告警** - 频繁超时可能意味着需要优化查询或增加资源
+
+**与 CacheInterceptor 配合使用:**
+
+```typescript
+// 缓存 + 超时组合 - 最佳实践
+@UseInterceptors(CacheInterceptor, TimeoutInterceptor)
+@CacheTTL(300)  // 缓存 5 分钟
+@Timeout(30000) // 超时 30 秒
+@Get('statistics')
+getStatistics() {
+  return this.statsService.getStatistics();
+}
+```
 
 ---
 
@@ -310,4 +373,4 @@ getProfile(@CurrentUser() user: User) {
 
 ---
 
-*最后更新：2026-03-28 05:50*
+*最后更新：2026-03-28 06:50*
