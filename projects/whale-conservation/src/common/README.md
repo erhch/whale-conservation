@@ -43,17 +43,23 @@ app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 
 ### 📁 Guards (路由守卫)
 
+✅ 已实现:
+
+- `JwtAuthGuard` - JWT 认证守卫 (支持 @Public() 装饰器跳过认证)
+
 待实现:
 
-- `JwtAuthGuard` - JWT 认证守卫
 - `RolesGuard` - RBAC 角色权限守卫
 
 ### 📁 Interceptors (拦截器)
 
-待实现:
+✅ 已实现:
 
 - `TransformInterceptor` - 统一响应格式封装
 - `LoggingInterceptor` - 请求日志记录
+
+待实现:
+
 - `CacheInterceptor` - 响应缓存
 
 ### 📁 Pipes (验证管道)
@@ -83,4 +89,4 @@ app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 
 ---
 
-*最后更新：2026-03-27*
+*最后更新：2026-03-27 22:35*
