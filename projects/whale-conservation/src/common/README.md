@@ -60,6 +60,7 @@ app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 - `LoggingInterceptor` - 请求日志记录
 - `CacheInterceptor` - 响应缓存 (支持自定义缓存键和 TTL)
 - `TimeoutInterceptor` - 请求超时控制 (防止慢查询阻塞资源)
+- `RateLimitInterceptor` - 请求速率限制 (防止 API 滥用和 DDoS)
 
 ### 📁 Interceptors (拦截器) - 详细用法
 
@@ -245,6 +246,122 @@ healthCheck() {
 getStatistics() {
   return this.statsService.getStatistics();
 }
+```
+
+### 📁 Interceptors (拦截器) - RateLimitInterceptor
+
+**RateLimitInterceptor 使用示例:**
+
+```typescript
+import { UseInterceptors } from '@nestjs/common';
+import { RateLimitInterceptor, RateLimit, RateLimitTTL } from '@/common/interceptors';
+
+// 基础用法 - 默认 100 次/分钟
+@UseInterceptors(RateLimitInterceptor)
+@Get('species')
+findAllSpecies() {
+  return this.speciesService.findAll();
+}
+
+// 严格限制 - 登录接口防暴力破解 (10 次/分钟)
+@UseInterceptors(RateLimitInterceptor)
+@RateLimit(10)
+@RateLimitTTL(60)
+@Post('login')
+login(@Body() dto: LoginDto) {
+  return this.authService.login(dto);
+}
+
+// 宽松限制 - 公开数据接口 (1000 次/分钟)
+@UseInterceptors(RateLimitInterceptor)
+@RateLimit(1000)
+@RateLimitTTL(60)
+@Get('public/data')
+getPublicData() {
+  return this.publicService.getData();
+}
+
+// 敏感操作 - 注册接口 (5 次/分钟)
+@UseInterceptors(RateLimitInterceptor)
+@RateLimit(5)
+@RateLimitTTL(60)
+@Post('register')
+register(@Body() dto: RegisterDto) {
+  return this.authService.register(dto);
+}
+```
+
+**速率限制装饰器:**
+
+| 装饰器 | 说明 | 参数 |
+|--------|------|------|
+| `@RateLimit(limit)` | 设置最大请求次数 | `limit: number` - 时间窗口内最大请求数 |
+| `@RateLimitTTL(ttl)` | 设置时间窗口 | `ttl: number` - 时间窗口 (秒) |
+
+**响应头:**
+
+- `Retry-After: <seconds>` - 建议重试时间 (秒)
+
+**错误响应:**
+
+```json
+{
+  "statusCode": 429,
+  "timestamp": "2026-03-28T14:30:00.000Z",
+  "path": "/api/v1/auth/login",
+  "message": "请求过于频繁，请 45 秒后重试",
+  "error": "Too Many Requests",
+  "description": "限制：10 次/60 秒"
+}
+```
+
+**速率限制建议:**
+
+| 接口类型 | 建议限制 | 说明 |
+|----------|----------|------|
+| 登录/注册 | 5-10 次/分钟 | 防止暴力破解和恶意注册 |
+| 密码重置 | 3 次/分钟 | 防止滥用 |
+| 敏感操作 | 10 次/分钟 | 删除、修改密码等 |
+| 常规 API | 100 次/分钟 | 默认值，适用于大多数场景 |
+| 公开数据 | 500-1000 次/分钟 | 物种列表、观测数据等 |
+| 文件下载 | 20 次/分钟 | 防止带宽滥用 |
+
+**注意事项:**
+
+1. ⚠️ **内存存储** - 当前使用内存存储，重启后清空，多机部署需改用 Redis
+2. ⚠️ **IP 识别** - 支持 `X-Forwarded-For` 和 `X-Real-IP`，确保反向代理正确配置
+3. ✅ **按路由区分** - 不同路由独立计数，`METHOD:URL` 作为键
+4. ✅ **自动清理** - 每分钟自动清理过期记录，防止内存泄漏
+
+**与 CacheInterceptor 配合使用:**
+
+```typescript
+// 速率限制 + 缓存组合 - 高并发场景最佳实践
+@UseInterceptors(RateLimitInterceptor, CacheInterceptor)
+@RateLimit(500)     // 500 次/分钟
+@RateLimitTTL(60)
+@CacheTTL(300)      // 缓存 5 分钟
+@Get('public/species')
+getPublicSpecies() {
+  return this.speciesService.findAll();
+}
+```
+
+**监控和管理:**
+
+```typescript
+// 在 Service 中注入 RateLimitInterceptor
+constructor(private rateLimitInterceptor: RateLimitInterceptor) {}
+
+// 清除指定客户端的限制记录 (如 VIP 用户白名单)
+this.rateLimitInterceptor.clearClient('192.168.1.100');
+
+// 清除所有记录 (如系统维护后)
+this.rateLimitInterceptor.clearAll();
+
+// 获取统计信息 (用于监控)
+const stats = this.rateLimitInterceptor.getStats();
+console.log(`当前活跃客户端：${stats.totalKeys}`);
 ```
 
 ---
