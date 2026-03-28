@@ -8,6 +8,13 @@ import { Repository } from 'typeorm';
 
 import { Species } from './entities/species.entity';
 
+export interface SpeciesFilter {
+  page?: number;
+  limit?: number;
+  iucnStatus?: string;
+  family?: string;
+}
+
 @Injectable()
 export class SpeciesService {
   constructor(
@@ -15,8 +22,29 @@ export class SpeciesService {
     private speciesRepository: Repository<Species>,
   ) {}
 
-  async findAll(): Promise<Species[]> {
-    return this.speciesRepository.find({ where: { isActive: true } });
+  async findAll(filter?: SpeciesFilter): Promise<{ data: Species[]; total: number; page: number; limit: number }> {
+    const page = filter?.page || 1;
+    const limit = filter?.limit || 10;
+    
+    const queryBuilder = this.speciesRepository
+      .createQueryBuilder('species')
+      .where('species.isActive = :isActive', { isActive: true });
+
+    if (filter?.iucnStatus) {
+      queryBuilder.andWhere('species.iucnStatus = :iucnStatus', { iucnStatus: filter.iucnStatus });
+    }
+
+    if (filter?.family) {
+      queryBuilder.andWhere('species.family = :family', { family: filter.family });
+    }
+
+    const [data, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .orderBy('species.createdAt', 'DESC')
+      .getManyAndCount();
+
+    return { data, total, page, limit };
   }
 
   async findOne(id: string): Promise<Species> {
