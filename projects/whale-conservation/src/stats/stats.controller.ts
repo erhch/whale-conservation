@@ -96,4 +96,36 @@ export class StatsController {
   ) {
     return this.statsService.getMonthlyStats(months);
   }
+
+  @Get('sightings/quarterly')
+  @ApiOperation({ summary: '获取季度观测统计' })
+  @ApiQuery({
+    name: 'quarters',
+    required: false,
+    type: Number,
+    description: '统计季度数，默认 8 个季度，最大 40 个季度',
+    example: 8,
+  })
+  async getQuarterlyStats(
+    @Query('quarters', new ParseOptionalIntPipe({ defaultValue: 8, min: 1, max: 40 }))
+    quarters: number,
+  ) {
+    return this.statsService.getQuarterlyStats(quarters);
+  }
+
+  @Get('sightings/yearly')
+  @ApiOperation({ summary: '获取年度观测统计' })
+  @ApiQuery({
+    name: 'years',
+    required: false,
+    type: Number,
+    description: '统计年数，默认 10 年，最大 50 年',
+    example: 10,
+  })
+  async getYearlyStats(
+    @Query('years', new ParseOptionalIntPipe({ defaultValue: 10, min: 1, max: 50 }))
+    years: number,
+  ) {
+    return this.statsService.getYearlyStats(years);
+  }
 }

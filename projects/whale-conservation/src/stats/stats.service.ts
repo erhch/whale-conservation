@@ -282,4 +282,48 @@ export class StatsService {
       count: parseInt(item.count, 10),
     }));
   }
+
+  /**
+   * 季度统计
+   * 按季度统计观测记录数量
+   */
+  async getQuarterlyStats(quarters: number = 8) {
+    const startDate = new Date(Date.now() - quarters * 90 * 24 * 60 * 60 * 1000);
+
+    const result = await this.sightingRepository
+      .createQueryBuilder('sighting')
+      .select("DATE_TRUNC('quarter', sighting.observedAt)", 'quarter')
+      .addSelect('COUNT(sighting.id)', 'count')
+      .where('sighting.observedAt >= :startDate', { startDate })
+      .groupBy("DATE_TRUNC('quarter', sighting.observedAt)")
+      .orderBy("DATE_TRUNC('quarter', sighting.observedAt)", 'ASC')
+      .getRawMany();
+
+    return result.map((item) => ({
+      quarter: item.quarter,
+      count: parseInt(item.count, 10),
+    }));
+  }
+
+  /**
+   * 年度统计
+   * 按年度统计观测记录数量
+   */
+  async getYearlyStats(years: number = 10) {
+    const startDate = new Date(Date.now() - years * 365 * 24 * 60 * 60 * 1000);
+
+    const result = await this.sightingRepository
+      .createQueryBuilder('sighting')
+      .select("DATE_TRUNC('year', sighting.observedAt)", 'year')
+      .addSelect('COUNT(sighting.id)', 'count')
+      .where('sighting.observedAt >= :startDate', { startDate })
+      .groupBy("DATE_TRUNC('year', sighting.observedAt)")
+      .orderBy("DATE_TRUNC('year', sighting.observedAt)", 'ASC')
+      .getRawMany();
+
+    return result.map((item) => ({
+      year: item.year,
+      count: parseInt(item.count, 10),
+    }));
+  }
 }
