@@ -223,4 +223,41 @@ export class StatsService {
       percentage: totalSightings > 0 ? Math.round((parseInt(item.count, 10) / totalSightings) * 100) : 0,
     }));
   }
+
+  /**
+   * 热门观测地点排行
+   * 返回观测记录数量最多的前 N 个地点
+   */
+  async getTopLocations(limit: number = 10) {
+    const result = await this.sightingRepository
+      .createQueryBuilder('sighting')
+      .select('station.id', 'id')
+      .addSelect('station.code', 'code')
+      .addSelect('station.name', 'name')
+      .addSelect('station.type', 'type')
+      .addSelect('station.location', 'location')
+      .addSelect('COUNT(sighting.id)', 'count')
+      .innerJoin('sighting.station', 'station')
+      .groupBy('station.id')
+      .addGroupBy('station.code')
+      .addGroupBy('station.name')
+      .addGroupBy('station.type')
+      .addGroupBy('station.location')
+      .orderBy('count', 'DESC')
+      .limit(limit)
+      .getRawMany();
+
+    const totalSightings = result.reduce((sum, item) => sum + parseInt(item.count, 10), 0);
+
+    return result.map((item, index) => ({
+      rank: index + 1,
+      id: item.id,
+      code: item.code,
+      name: item.name,
+      type: item.type,
+      location: item.location,
+      count: parseInt(item.count, 10),
+      percentage: totalSightings > 0 ? Math.round((parseInt(item.count, 10) / totalSightings) * 100) : 0,
+    }));
+  }
 }

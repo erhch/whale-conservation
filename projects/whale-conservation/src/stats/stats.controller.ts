@@ -64,4 +64,20 @@ export class StatsController {
   async getSpeciesFrequency() {
     return this.statsService.getSpeciesFrequency();
   }
+
+  @Get('locations/top')
+  @ApiOperation({ summary: '获取热门观测地点排行' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: '返回前 N 个地点，默认 10 个，最大 100 个',
+    example: 10,
+  })
+  async getTopLocations(
+    @Query('limit', new ParseOptionalIntPipe({ defaultValue: 10, min: 1, max: 100 }))
+    limit: number,
+  ) {
+    return this.statsService.getTopLocations(limit);
+  }
 }

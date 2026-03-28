@@ -361,16 +361,86 @@ curl -X GET "http://localhost:3000/api/v1/stats/sightings/trend?days=7"
 
 ---
 
+### 9. 热门观测地点排行
+
+**GET** `/api/v1/stats/locations/top`
+
+获取观测记录数量最多的热门地点排行。
+
+**查询参数:**
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `limit` | `number` | `10` | 返回前 N 个地点 (1-100) |
+
+**请求示例:**
+
+```
+GET /api/v1/stats/locations/top?limit=5
+```
+
+**响应示例:**
+
+```json
+[
+  {
+    "rank": 1,
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "code": "ST001",
+    "name": "东海监测站",
+    "type": "fixed",
+    "location": "东海海域",
+    "count": 120,
+    "percentage": 50
+  },
+  {
+    "rank": 2,
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "code": "ST002",
+    "name": "南海考察船",
+    "type": "vessel",
+    "location": "南海海域",
+    "count": 72,
+    "percentage": 30
+  },
+  {
+    "rank": 3,
+    "id": "550e8400-e29b-41d4-a716-446655440002",
+    "code": "ST003",
+    "name": "黄海浮标站",
+    "type": "fixed",
+    "location": "黄海海域",
+    "count": 48,
+    "percentage": 20
+  }
+]
+```
+
+**字段说明:**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `rank` | `number` | 排名 |
+| `id` | `string` | 站点 UUID |
+| `code` | `string` | 站点代码 |
+| `name` | `string` | 站点名称 |
+| `type` | `string` | 站点类型 (`fixed`/`mobile`/`vessel`) |
+| `location` | `string` | 地理位置描述 |
+| `count` | `number` | 该站点的观测记录总数 |
+| `percentage` | `number` | 占总观测记录的百分比 |
+
+---
+
 ## 待扩展功能
 
 - [x] 按监测站点统计
 - [x] 鲸鱼生命状态分布
 - [x] 鲸鱼性别分布
 - [x] 物种出现频率统计
+- [x] 热门观测地点排行 ✨ **本次完成**
 - [ ] 按月份/季度/年度统计
 - [ ] 鲸鱼个体活跃度分析
-- [ ] 热门观测地点排行
 
 ---
 
-*最后更新：2026-03-29 (新增：鲸鱼状态分布、性别分布、物种出现频率 API)*
+*最后更新：2026-03-29 (新增：鲸鱼状态分布、性别分布、物种出现频率、热门观测地点排行 API)*
