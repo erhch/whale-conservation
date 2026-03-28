@@ -2,8 +2,8 @@
 
 > 鲸创管理系统 - 公共工具模块快速上手指南
 
-版本：v0.1.0  
-最后更新：2026-03-28
+版本：v0.1.1  
+最后更新：2026-03-29
 
 ---
 
@@ -17,7 +17,7 @@
 |------|------|----------|
 | **Filters** | 统一异常处理 | 全局错误响应格式化 |
 | **Guards** | JWT 认证 + RBAC 权限 | 接口安全控制 |
-| **Interceptors** | 日志/缓存/超时/响应转换 | 横切关注点统一处理 |
+| **Interceptors** | 日志/缓存/超时/响应转换/ETag | 横切关注点统一处理 |
 | **Pipes** | 参数验证与转换 | Query/Body 参数解析 |
 | **Decorators** | @Public/@Roles/@CurrentUser | 路由元数据标记 |
 
@@ -255,6 +255,61 @@ export class WhalesController {
   }
 }
 ```
+
+### 🏷️ 场景 10: HTTP 条件请求 (ETag)
+
+```typescript
+import { UseInterceptors, ETag } from '@/common/interceptors';
+
+@Controller('species')
+export class SpeciesController {
+  // 启用 ETag - 客户端缓存验证
+  @UseInterceptors(ETagInterceptor)
+  @Get()
+  findAll() {
+    return this.speciesService.findAll();
+  }
+  
+  // 弱验证 ETag - 适用于语义相同但字节不同的响应
+  @UseInterceptors(ETagInterceptor)
+  @ETag(true)
+  @Get('details/:id')
+  findOne(@Param('id') id: string) {
+    return this.speciesService.findOne(id);
+  }
+}
+```
+
+**客户端使用示例:**
+
+```bash
+# 首次请求 - 获取数据和 ETag
+$ curl -i https://api.example.com/api/v1/species
+# 响应包含：ETag: "a1b2c3d4e5f6g7h8"
+
+# 后续请求 - 使用 If-None-Match 检查是否更新
+$ curl -i -H 'If-None-Match: "a1b2c3d4e5f6g7h8"' https://api.example.com/api/v1/species
+# 如果数据未变：HTTP 304 Not Modified (无响应体，节省带宽)
+# 如果数据已变：HTTP 200 OK + 新数据 + 新 ETag
+```
+
+**与缓存拦截器配合使用:**
+
+```typescript
+// 同时启用服务器缓存和客户端 ETag 验证
+@UseInterceptors(CacheInterceptor, ETagInterceptor)
+@Get()
+findAll() {
+  return this.speciesService.findAll();
+}
+```
+
+**优势:**
+- 📉 减少带宽消耗 - 未变更数据返回 304 空响应
+- ⚡ 提升响应速度 - 客户端可直接使用本地缓存
+- 🔒 无状态 - 服务器无需维护缓存状态，ETag 从响应体生成
+
+**注意:** ETag 仅对 `GET` 和 `HEAD` 请求生效。
 
 ---
 
