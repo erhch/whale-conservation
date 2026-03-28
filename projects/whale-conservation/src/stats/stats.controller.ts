@@ -228,4 +228,21 @@ export class StatsController {
   async getBehaviorDistribution() {
     return this.statsService.getBehaviorDistribution();
   }
+
+  @Get('whales/:whaleId/migration')
+  @ApiOperation({ summary: '获取鲸鱼迁徙轨迹分析' })
+  @ApiQuery({
+    name: 'days',
+    required: false,
+    type: Number,
+    description: '回溯天数，默认 365 天，最大 730 天',
+    example: 365,
+  })
+  async getWhaleMigration(
+    @Param('whaleId') whaleId: string,
+    @Query('days', new ParseOptionalIntPipe({ defaultValue: 365, min: 1, max: 730 }))
+    days: number,
+  ) {
+    return this.statsService.getWhaleMigration(whaleId, days);
+  }
 }

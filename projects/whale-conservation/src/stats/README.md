@@ -995,6 +995,153 @@ GET /api/v1/stats/species/550e8400-e29b-41d4-a716-446655440000
 
 ---
 
+### 17. 鲸鱼迁徙轨迹分析
+
+**GET** `/api/v1/stats/whales/:whaleId/migration`
+
+获取指定鲸鱼个体的迁徙轨迹，包括历史观测记录、移动路径和距离统计。
+
+**路径参数:**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `whaleId` | `string` | 鲸鱼 UUID |
+
+**查询参数:**
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `days` | `number` | `365` | 回溯天数 (1-730) |
+
+**请求示例:**
+
+```
+GET /api/v1/stats/whales/550e8400-e29b-41d4-a716-446655440010/migration?days=180
+```
+
+**响应示例:**
+
+```json
+{
+  "whale": {
+    "id": "550e8400-e29b-41d4-a716-446655440010",
+    "identifier": "BCX001",
+    "name": "大白",
+    "species": "座头鲸",
+    "lifeStatus": "alive"
+  },
+  "period": {
+    "startDate": "2025-09-29T00:00:00.000Z",
+    "endDate": "2026-03-29T00:00:00.000Z",
+    "days": 180
+  },
+  "summary": {
+    "totalSightings": 12,
+    "uniqueLocations": 5,
+    "firstSighting": {
+      "date": "2025-10-05T08:30:00.000Z",
+      "location": "南海海域"
+    },
+    "lastSighting": {
+      "date": "2026-03-28T14:30:00.000Z",
+      "location": "东海监测站"
+    },
+    "estimatedTotalDistanceKm": 2847.5
+  },
+  "trajectory": [
+    {
+      "sequence": 1,
+      "observedAt": "2025-10-05T08:30:00.000Z",
+      "location": "南海海域",
+      "coordinates": {
+        "lat": 18.2567,
+        "lng": 109.5123
+      },
+      "behavior": "feeding",
+      "groupSize": 2,
+      "station": {
+        "code": "ST002",
+        "name": "南海考察船"
+      }
+    },
+    {
+      "sequence": 2,
+      "observedAt": "2025-11-12T10:15:00.000Z",
+      "location": "台湾海峡",
+      "coordinates": {
+        "lat": 23.5678,
+        "lng": 117.8901
+      },
+      "behavior": "migrating",
+      "groupSize": 1,
+      "station": null
+    },
+    {
+      "sequence": 3,
+      "observedAt": "2026-01-20T14:45:00.000Z",
+      "location": "东海海域",
+      "coordinates": {
+        "lat": 28.9012,
+        "lng": 122.3456
+      },
+      "behavior": "socializing",
+      "groupSize": 3,
+      "station": {
+        "code": "ST001",
+        "name": "东海监测站"
+      }
+    }
+  ]
+}
+```
+
+**字段说明:**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `whale` | `object` | 鲸鱼基本信息 |
+| `whale.id` | `string` | 鲸鱼 UUID |
+| `whale.identifier` | `string` | 鲸鱼编号 |
+| `whale.name` | `string` | 鲸鱼昵称 (可能为 null) |
+| `whale.species` | `string` | 物种中文名 |
+| `whale.lifeStatus` | `string` | 生命状态 (alive/deceased/missing) |
+| `period` | `object` | 统计时间段 |
+| `period.startDate` | `string` | 开始日期 (ISO 8601) |
+| `period.endDate` | `string` | 结束日期 (ISO 8601) |
+| `period.days` | `number` | 回溯天数 |
+| `summary` | `object` | 迁徙统计摘要 |
+| `summary.totalSightings` | `number` | 观测记录总数 |
+| `summary.uniqueLocations` | `number` | 去重后的地点数量 |
+| `summary.firstSighting` | `object` | 首次观测信息 |
+| `summary.lastSighting` | `object` | 最后观测信息 |
+| `summary.estimatedTotalDistanceKm` | `number` | 估算总移动距离 (公里) |
+| `trajectory` | `array` | 迁徙轨迹点列表 (按时间升序) |
+| `trajectory[].sequence` | `number` | 序号 |
+| `trajectory[].observedAt` | `string` | 观测时间 (ISO 8601) |
+| `trajectory[].location` | `string` | 观测地点 |
+| `trajectory[].coordinates` | `object` | 地理坐标 (可能为 null) |
+| `trajectory[].coordinates.lat` | `number` | 纬度 |
+| `trajectory[].coordinates.lng` | `number` | 经度 |
+| `trajectory[].behavior` | `string` | 行为类型 |
+| `trajectory[].groupSize` | `number` | 群体数量 |
+| `trajectory[].station` | `object` | 监测站信息 (可能为 null) |
+
+**使用场景:**
+
+- 🗺️ **迁徙路径可视化**: 在地图上展示鲸鱼移动轨迹
+- 📊 **行为研究**: 分析鲸鱼的迁徙模式和栖息地偏好
+- 🐋 **个体追踪**: 追踪特定鲸鱼的活动范围
+- 📈 **生态分析**: 研究季节性迁徙规律
+- 🔬 **科研支持**: 为海洋生物研究提供数据支持
+
+**技术实现:**
+
+- 使用 Haversine 公式计算两点间球面距离
+- 按时间升序排列观测记录构建轨迹
+- 支持自定义回溯天数 (1-730 天)
+
+---
+
 ## 待扩展功能
 
 - [x] 按监测站点统计
@@ -1008,11 +1155,11 @@ GET /api/v1/stats/species/550e8400-e29b-41d4-a716-446655440000
 - [x] 鲸鱼个体活跃度分析
 - [x] 最近观测记录列表
 - [x] 指定物种详细统计
-- [x] 观测行为分布统计 ✨ **本次完成**
-- [x] 性能优化：统计接口缓存 ✨ **本次完成**
-- [ ] 鲸鱼迁徙轨迹分析
+- [x] 观测行为分布统计
+- [x] 性能优化：统计接口缓存
+- [x] 鲸鱼迁徙轨迹分析 ✨ **本次完成**
 - [ ] 种群增长趋势预测
 
 ---
 
-*最后更新：2026-03-29 (新增：观测行为分布统计 API、统计接口缓存优化)*
+*最后更新：2026-03-29 (新增：鲸鱼迁徙轨迹分析 API)*

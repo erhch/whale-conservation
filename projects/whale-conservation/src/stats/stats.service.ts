@@ -580,4 +580,142 @@ export class StatsService {
       percentage: totalSightings > 0 ? Math.round((parseInt(item.count, 10) / totalSightings) * 100) : 0,
     }));
   }
+
+  /**
+   * 鲸鱼迁徙轨迹分析
+   * 追踪单只鲸鱼的观测记录，构建迁徙路径
+   * @param whaleId 鲸鱼 ID
+   * @param days 回溯天数，默认 365 天
+   */
+  async getWhaleMigration(whaleId: string, days: number = 365) {
+    // 获取鲸鱼基本信息
+    const whale = await this.whaleRepository.findOne({
+      where: { id: whaleId },
+      select: ['id', 'identifier', 'name', 'lifeStatus'],
+      relations: ['species'],
+    });
+
+    if (!whale) {
+      throw new Error(`Whale with id ${whaleId} not found`);
+    }
+
+    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    // 获取该鲸鱼的观测记录，按时间排序
+    const sightings = await this.sightingRepository
+      .createQueryBuilder('sighting')
+      .select('sighting.id', 'id')
+      .addSelect('sighting.observedAt', 'observedAt')
+      .addSelect('sighting.location', 'location')
+      .addSelect('sighting.locationName', 'locationName')
+      .addSelect('sighting.latitude', 'latitude')
+      .addSelect('sighting.longitude', 'longitude')
+      .addSelect('sighting.behavior', 'behavior')
+      .addSelect('sighting.groupSize', 'groupSize')
+      .addSelect('station.code', 'stationCode')
+      .addSelect('station.name', 'stationName')
+      .leftJoin('sighting.station', 'station')
+      .where('sighting.whaleId = :whaleId', { whaleId })
+      .andWhere('sighting.observedAt >= :startDate', { startDate })
+      .orderBy('sighting.observedAt', 'ASC')
+      .getRawMany();
+
+    // 构建迁徙轨迹点
+    const trajectory = sightings.map((item, index) => ({
+      sequence: index + 1,
+      observedAt: item.observedAt,
+      location: item.locationName || item.location,
+      coordinates: item.latitude && item.longitude
+        ? {
+            lat: parseFloat(item.latitude),
+            lng: parseFloat(item.longitude),
+          }
+        : null,
+      behavior: item.behavior,
+      groupSize: item.groupSize ? parseInt(item.groupSize, 10) : null,
+      station: item.stationCode
+        ? {
+            code: item.stationCode,
+            name: item.stationName,
+          }
+        : null,
+    }));
+
+    // 计算迁徙统计
+    const uniqueLocations = [...new Set(sightings.map((s) => s.location))];
+    const firstSighting = sightings[0];
+    const lastSighting = sightings[sightings.length - 1];
+
+    let totalDistance = 0;
+    if (trajectory.length > 1) {
+      for (let i = 1; i < trajectory.length; i++) {
+        const prev = trajectory[i - 1];
+        const curr = trajectory[i];
+        if (prev.coordinates && curr.coordinates) {
+          const dist = this.calculateDistance(
+            prev.coordinates.lat,
+            prev.coordinates.lng,
+            curr.coordinates.lat,
+            curr.coordinates.lng,
+          );
+          totalDistance += dist;
+        }
+      }
+    }
+
+    return {
+      whale: {
+        id: whale.id,
+        identifier: whale.identifier,
+        name: whale.name,
+        species: whale.species?.commonNameZh,
+        lifeStatus: whale.lifeStatus,
+      },
+      period: {
+        startDate: startDate.toISOString(),
+        endDate: new Date().toISOString(),
+        days,
+      },
+      summary: {
+        totalSightings: sightings.length,
+        uniqueLocations: uniqueLocations.length,
+        firstSighting: firstSighting
+          ? {
+              date: firstSighting.observedAt,
+              location: firstSighting.locationName || firstSighting.location,
+            }
+          : null,
+        lastSighting: lastSighting
+          ? {
+              date: lastSighting.observedAt,
+              location: lastSighting.locationName || lastSighting.location,
+            }
+          : null,
+        estimatedTotalDistanceKm: Math.round(totalDistance * 10) / 10,
+      },
+      trajectory,
+    };
+  }
+
+  /**
+   * 计算两点之间的球面距离 (Haversine 公式)
+   * @param lat1 起点纬度
+   * @param lng1 起点经度
+   * @param lat2 终点纬度
+   * @param lng2 终点经度
+   * @returns 距离 (公里)
+   */
+  private calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+    const R = 6371; // 地球半径 (公里)
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLng = ((lng2 - lng1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
 }
