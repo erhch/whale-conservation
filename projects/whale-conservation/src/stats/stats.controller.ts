@@ -2,11 +2,12 @@
  * 统计分析控制器
  */
 
-import { Controller, Get, Query, Param } from '@nestjs/common';
+import { Controller, Get, Query, Param, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 
 import { StatsService } from './stats.service';
 import { ParseOptionalIntPipe } from '@/common/pipes';
+import { CacheInterceptor, CacheTTL } from '@/common/interceptors';
 
 @ApiTags('stats')
 @Controller('stats')
@@ -15,12 +16,16 @@ export class StatsController {
 
   @Get('overview')
   @ApiOperation({ summary: '获取总体统计概览' })
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(300) // 缓存 5 分钟
   async getOverview() {
     return this.statsService.getOverview();
   }
 
   @Get('species/distribution')
   @ApiOperation({ summary: '获取物种分布统计' })
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(600) // 缓存 10 分钟
   async getSpeciesDistribution() {
     return this.statsService.getSpeciesDistribution();
   }
@@ -49,12 +54,16 @@ export class StatsController {
 
   @Get('whales/status')
   @ApiOperation({ summary: '获取鲸鱼个体生命状态分布' })
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(600) // 缓存 10 分钟
   async getWhaleStatusBreakdown() {
     return this.statsService.getWhaleStatusBreakdown();
   }
 
   @Get('whales/sex')
   @ApiOperation({ summary: '获取鲸鱼个体性别分布' })
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(600) // 缓存 10 分钟
   async getWhaleSexDistribution() {
     return this.statsService.getWhaleSexDistribution();
   }
