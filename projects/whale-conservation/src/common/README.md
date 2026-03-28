@@ -254,8 +254,9 @@ getStatistics() {
 ✅ 已实现:
 
 - `ParseOptionalIntPipe` - 可选整数解析管道 (支持默认值、范围验证)
-- `ParseOptionalFloatPipe` - 可选浮点数解析管道 (支持默认值、范围验证)
+- `ParseOptionalFloatPipe` - 可选浮点数解析管道 (支持默认值、范围验证、精度控制)
 - `ParseOptionalBooleanPipe` - 可选布尔值解析管道 (支持多种格式)
+- `ParseOptionalDatePipe` - 可选日期解析管道 (支持默认值、日期范围验证)
 
 **使用示例:**
 
@@ -277,15 +278,36 @@ active: boolean;
 // 验证状态 - 支持 true/false, 1/0, yes/no, on/off
 @Query('verified', new ParseOptionalBooleanPipe())
 verified: boolean | undefined;
+
+// 日期范围查询 - 观测日期筛选
+@Query('startDate', new ParseOptionalDatePipe())
+startDate?: Date;
+
+@Query('endDate', new ParseOptionalDatePipe())
+endDate?: Date;
+
+// 带默认值 - 默认查询最近 30 天
+@Query('fromDate', new ParseOptionalDatePipe({ 
+  defaultValue: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) 
+}))
+fromDate: Date;
+
+// 带范围验证 - 日期不能早于项目启动时间，不能晚于今天
+@Query('observationDate', new ParseOptionalDatePipe({
+  min: new Date('2024-01-01'),
+  max: new Date()
+}))
+observationDate?: Date;
 ```
 
 **选项说明:**
 
 | 选项 | 类型 | 说明 |
 |------|------|------|
-| `defaultValue` | `number \| boolean` | 当参数为空时的默认值 |
-| `min` | `number` | 最小值限制 (仅整数/浮点数管道) |
-| `max` | `number` | 最大值限制 (仅整数/浮点数管道) |
+| `defaultValue` | `number \| boolean \| Date` | 当参数为空时的默认值 |
+| `min` | `number \| Date` | 最小值限制 (整数/浮点数/日期管道) |
+| `max` | `number \| Date` | 最大值限制 (整数/浮点数/日期管道) |
+| `precision` | `number` | 小数位数精度 (仅浮点数管道) |
 
 **ParseOptionalBooleanPipe 支持的输入格式:**
 
@@ -298,8 +320,8 @@ verified: boolean | undefined;
 
 待实现:
 
-- `ParseUUIDPipe` - UUID 解析 (NestJS 内置)
-- 自定义业务验证管道
+- `ParseUUIDPipe` - UUID 解析 (NestJS 内置，可直接使用)
+- 自定义业务验证管道 (根据业务需求扩展)
 
 ### 📁 Decorators (装饰器)
 
