@@ -593,6 +593,84 @@ GET /api/v1/stats/sightings/yearly?years=5
 
 ---
 
+### 13. 活跃鲸鱼个体排行
+
+**GET** `/api/v1/stats/whales/active`
+
+获取指定时间段内观测记录数量最多的活跃鲸鱼个体排行。
+
+**查询参数:**
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `limit` | `number` | `10` | 返回前 N 只鲸鱼 (1-100) |
+| `days` | `number` | `90` | 统计天数 (1-365) |
+
+**请求示例:**
+
+```
+GET /api/v1/stats/whales/active?limit=5&days=30
+```
+
+**响应示例:**
+
+```json
+[
+  {
+    "rank": 1,
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "identifier": "BCX001",
+    "name": "大白",
+    "species": "座头鲸",
+    "lastLocation": "东海监测站",
+    "lastSightedAt": "2026-03-28T14:30:00.000Z",
+    "count": 12
+  },
+  {
+    "rank": 2,
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "identifier": "BCX005",
+    "name": "阿浪",
+    "species": "蓝鲸",
+    "lastLocation": "南海考察船",
+    "lastSightedAt": "2026-03-27T09:15:00.000Z",
+    "count": 8
+  },
+  {
+    "rank": 3,
+    "id": "550e8400-e29b-41d4-a716-446655440002",
+    "identifier": "BCX012",
+    "name": null,
+    "species": "虎鲸",
+    "lastLocation": "黄海浮标站",
+    "lastSightedAt": "2026-03-26T16:45:00.000Z",
+    "count": 6
+  }
+]
+```
+
+**字段说明:**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `rank` | `number` | 排名 |
+| `id` | `string` | 鲸鱼 UUID |
+| `identifier` | `string` | 鲸鱼编号 (如：BCX001) |
+| `name` | `string` | 鲸鱼昵称 (可能为 null) |
+| `species` | `string` | 物种中文名 |
+| `lastLocation` | `string` | 最后观测地点 |
+| `lastSightedAt` | `string` | 最后观测时间 (ISO 8601) |
+| `count` | `number` | 该时间段内的观测记录数 |
+
+**使用场景:**
+
+- 🏆 **明星鲸鱼榜**: 展示最受欢迎的鲸鱼个体
+- 📊 **活跃度分析**: 识别高频出现的鲸鱼
+- 🗺️ **栖息地偏好**: 结合 lastLocation 分析活动范围
+- 📈 **趋势监测**: 定期追踪活跃鲸鱼变化
+
+---
+
 ## 待扩展功能
 
 - [x] 按监测站点统计
@@ -601,9 +679,11 @@ GET /api/v1/stats/sightings/yearly?years=5
 - [x] 物种出现频率统计
 - [x] 热门观测地点排行
 - [x] 月度观测统计
-- [x] 季度/年度统计 ✨ **本次完成**
-- [ ] 鲸鱼个体活跃度分析
+- [x] 季度/年度统计
+- [x] 鲸鱼个体活跃度分析 ✨ **本次完成**
+- [ ] 鲸鱼迁徙轨迹分析
+- [ ] 种群增长趋势预测
 
 ---
 
-*最后更新：2026-03-29 (新增：季度统计、年度统计 API)*
+*最后更新：2026-03-29 (新增：活跃鲸鱼个体排行 API)*

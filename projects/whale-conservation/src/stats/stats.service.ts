@@ -326,4 +326,44 @@ export class StatsService {
       count: parseInt(item.count, 10),
     }));
   }
+
+  /**
+   * 活跃鲸鱼个体排行
+   * 返回观测记录数量最多的前 N 只鲸鱼
+   */
+  async getActiveWhales(limit: number = 10, days: number = 90) {
+    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    const result = await this.sightingRepository
+      .createQueryBuilder('sighting')
+      .select('whale.id', 'id')
+      .addSelect('whale.identifier', 'identifier')
+      .addSelect('whale.name', 'name')
+      .addSelect('species.commonNameZh', 'species')
+      .addSelect('whale.lastSightedLocation', 'lastLocation')
+      .addSelect('MAX(sighting.observedAt)', 'lastSightedAt')
+      .addSelect('COUNT(sighting.id)', 'count')
+      .innerJoin('sighting.whale', 'whale')
+      .innerJoin('whale.species', 'species')
+      .where('sighting.observedAt >= :startDate', { startDate })
+      .groupBy('whale.id')
+      .addGroupBy('whale.identifier')
+      .addGroupBy('whale.name')
+      .addGroupBy('species.commonNameZh')
+      .addGroupBy('whale.lastSightedLocation')
+      .orderBy('count', 'DESC')
+      .limit(limit)
+      .getRawMany();
+
+    return result.map((item, index) => ({
+      rank: index + 1,
+      id: item.id,
+      identifier: item.identifier,
+      name: item.name,
+      species: item.species,
+      lastLocation: item.lastLocation,
+      lastSightedAt: item.lastSightedAt,
+      count: parseInt(item.count, 10),
+    }));
+  }
 }

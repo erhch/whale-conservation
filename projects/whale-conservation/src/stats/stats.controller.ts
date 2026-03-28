@@ -128,4 +128,29 @@ export class StatsController {
   ) {
     return this.statsService.getYearlyStats(years);
   }
+
+  @Get('whales/active')
+  @ApiOperation({ summary: '获取活跃鲸鱼个体排行' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: '返回前 N 只鲸鱼，默认 10 只，最大 100 只',
+    example: 10,
+  })
+  @ApiQuery({
+    name: 'days',
+    required: false,
+    type: Number,
+    description: '统计天数，默认 90 天，最大 365 天',
+    example: 90,
+  })
+  async getActiveWhales(
+    @Query('limit', new ParseOptionalIntPipe({ defaultValue: 10, min: 1, max: 100 }))
+    limit: number,
+    @Query('days', new ParseOptionalIntPipe({ defaultValue: 90, min: 1, max: 365 }))
+    days: number,
+  ) {
+    return this.statsService.getActiveWhales(limit, days);
+  }
 }
