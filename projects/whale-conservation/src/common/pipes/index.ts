@@ -7,3 +7,4 @@ export { ParseOptionalFloatPipe, type ParseOptionalFloatOptions } from './parse-
 export { ParseOptionalBooleanPipe, type ParseOptionalBooleanOptions } from './parse-optional-boolean.pipe';
 export { ParseOptionalDatePipe, type ParseOptionalDateOptions } from './parse-optional-date.pipe';
 export { ParseOptionalStringPipe, type ParseOptionalStringOptions } from './parse-optional-string.pipe';
+export { ParseEnumPipe, type ParseEnumOptions } from './parse-enum.pipe';

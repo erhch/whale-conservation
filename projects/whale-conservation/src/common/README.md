@@ -258,6 +258,7 @@ getStatistics() {
 - `ParseOptionalBooleanPipe` - 可选布尔值解析管道 (支持多种格式)
 - `ParseOptionalDatePipe` - 可选日期解析管道 (支持默认值、日期范围验证)
 - `ParseOptionalStringPipe` - 可选字符串解析管道 (支持修剪、长度验证、正则匹配、大小写转换)
+- `ParseEnumPipe` - 枚举值解析管道 (支持枚举类型验证、默认值、必填校验)
 
 **使用示例:**
 
@@ -335,6 +336,43 @@ status: string;
   toUpperCase: true 
 }))
 countryCode?: string;
+```
+
+**ParseEnumPipe 使用示例:**
+
+```typescript
+import { ParseEnumPipe } from '@/common/pipes';
+import { Sex, LifeStatus } from '@/whales/entities/whale.entity';
+import { IUCNStatus } from '@/species/entities/species.entity';
+
+// 性别筛选 - 支持 M/F/U
+@Query('sex', new ParseEnumPipe({ enumType: Sex }))
+sex?: Sex;
+
+// 生命状态筛选 - 支持默认值
+@Query('status', new ParseEnumPipe({ 
+  enumType: LifeStatus,
+  defaultValue: LifeStatus.ALIVE 
+}))
+status: LifeStatus;
+
+// IUCN 保护等级筛选 - 必填参数
+@Query('iucnStatus', new ParseEnumPipe({ 
+  enumType: IUCNStatus,
+  required: true 
+}))
+iucnStatus: IUCNStatus;
+
+// 组合使用 - 分页 + 枚举筛选
+@Get('whales')
+findAll(
+  @Query('page', new ParseOptionalIntPipe({ defaultValue: 1, min: 1 })) page: number,
+  @Query('pageSize', new ParseOptionalIntPipe({ defaultValue: 20, min: 1, max: 100 })) pageSize: number,
+  @Query('sex', new ParseEnumPipe({ enumType: Sex })) sex?: Sex,
+  @Query('status', new ParseEnumPipe({ enumType: LifeStatus })) status?: LifeStatus,
+) {
+  return this.whalesService.findAll({ page, pageSize, sex, status });
+}
 ```
 
 **选项说明:**
@@ -439,4 +477,4 @@ getProfile(@CurrentUser() user: User) {
 
 ---
 
-*最后更新：2026-03-28 06:50*
+*最后更新：2026-03-28 14:10*
