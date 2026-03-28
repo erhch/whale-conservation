@@ -195,4 +195,32 @@ export class StatsService {
       sexRatio: distribution.female > 0 ? (distribution.male / distribution.female).toFixed(2) : 'N/A',
     };
   }
+
+  /**
+   * 物种出现频率统计
+   * 按观测记录数量统计各物种的出现频率
+   */
+  async getSpeciesFrequency() {
+    const result = await this.sightingRepository
+      .createQueryBuilder('sighting')
+      .select('species.commonNameZh', 'name')
+      .addSelect('species.scientificName', 'scientificName')
+      .addSelect('COUNT(sighting.id)', 'count')
+      .innerJoin('sighting.whale', 'whale')
+      .innerJoin('whale.species', 'species')
+      .groupBy('species.id')
+      .addGroupBy('species.commonNameZh')
+      .addGroupBy('species.scientificName')
+      .orderBy('count', 'DESC')
+      .getRawMany();
+
+    const totalSightings = result.reduce((sum, item) => sum + parseInt(item.count, 10), 0);
+
+    return result.map((item) => ({
+      name: item.name,
+      scientificName: item.scientificName,
+      count: parseInt(item.count, 10),
+      percentage: totalSightings > 0 ? Math.round((parseInt(item.count, 10) / totalSightings) * 100) : 0,
+    }));
+  }
 }

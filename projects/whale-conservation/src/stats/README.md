@@ -212,7 +212,49 @@ GET /api/v1/stats/sightings/trend?days=7
 
 ---
 
-### 7. 监测站点统计
+### 7. 物种出现频率统计
+
+**GET** `/api/v1/stats/species/frequency`
+
+获取各物种的观测出现频率统计（按观测记录数量降序排列）。
+
+**响应示例:**
+
+```json
+[
+  {
+    "name": "座头鲸",
+    "scientificName": "Megaptera novaeangliae",
+    "count": 120,
+    "percentage": 50
+  },
+  {
+    "name": "蓝鲸",
+    "scientificName": "Balaenoptera musculus",
+    "count": 48,
+    "percentage": 20
+  },
+  {
+    "name": "虎鲸",
+    "scientificName": "Orcinus orca",
+    "count": 70,
+    "percentage": 29
+  }
+]
+```
+
+**字段说明:**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `name` | `string` | 物种中文名 |
+| `scientificName` | `string` | 物种学名 |
+| `count` | `number` | 该物种的观测记录总数 |
+| `percentage` | `number` | 占总观测记录的百分比 |
+
+---
+
+### 8. 监测站点统计
 
 **GET** `/api/v1/stats/stations`
 
@@ -324,11 +366,11 @@ curl -X GET "http://localhost:3000/api/v1/stats/sightings/trend?days=7"
 - [x] 按监测站点统计
 - [x] 鲸鱼生命状态分布
 - [x] 鲸鱼性别分布
+- [x] 物种出现频率统计
 - [ ] 按月份/季度/年度统计
 - [ ] 鲸鱼个体活跃度分析
 - [ ] 热门观测地点排行
-- [ ] 物种出现频率统计
 
 ---
 
-*最后更新：2026-03-29 (新增：鲸鱼状态分布和性别分布 API)*
+*最后更新：2026-03-29 (新增：鲸鱼状态分布、性别分布、物种出现频率 API)*

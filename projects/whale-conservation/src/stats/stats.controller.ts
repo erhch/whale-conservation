@@ -58,4 +58,10 @@ export class StatsController {
   async getWhaleSexDistribution() {
     return this.statsService.getWhaleSexDistribution();
   }
+
+  @Get('species/frequency')
+  @ApiOperation({ summary: '获取物种出现频率统计' })
+  async getSpeciesFrequency() {
+    return this.statsService.getSpeciesFrequency();
+  }
 }
