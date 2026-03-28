@@ -995,7 +995,121 @@ GET /api/v1/stats/species/550e8400-e29b-41d4-a716-446655440000
 
 ---
 
-### 17. 鲸鱼迁徙轨迹分析
+### 17. 种群增长趋势预测
+
+**GET** `/api/v1/stats/population/growth-trend`
+
+获取鲸鱼种群的历史增长趋势及未来预测 (使用线性回归模型)。
+
+**查询参数:**
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `months` | `number` | `12` | 统计月数 (1-60) |
+| `forecastMonths` | `number` | `3` | 预测月数 (1-12) |
+
+**请求示例:**
+
+```
+GET /api/v1/stats/population/growth-trend?months=12&forecastMonths=3
+```
+
+**响应示例:**
+
+```json
+{
+  "period": {
+    "startDate": "2025-03-29T00:00:00.000Z",
+    "endDate": "2026-03-29T00:00:00.000Z",
+    "months": 12
+  },
+  "history": [
+    {
+      "month": "2025-04-01T00:00:00.000Z",
+      "newWhales": 3,
+      "cumulative": 3
+    },
+    {
+      "month": "2025-05-01T00:00:00.000Z",
+      "newWhales": 5,
+      "cumulative": 8
+    },
+    {
+      "month": "2025-06-01T00:00:00.000Z",
+      "newWhales": 4,
+      "cumulative": 12
+    }
+  ],
+  "predictions": [
+    {
+      "month": "2026-04-01T00:00:00.000Z",
+      "predictedCumulative": 48,
+      "isForecast": true
+    },
+    {
+      "month": "2026-05-01T00:00:00.000Z",
+      "predictedCumulative": 52,
+      "isForecast": true
+    },
+    {
+      "month": "2026-06-01T00:00:00.000Z",
+      "predictedCumulative": 56,
+      "isForecast": true
+    }
+  ],
+  "analytics": {
+    "totalNewWhales": 45,
+    "avgMonthlyNewWhales": 3.8,
+    "avgGrowthRate": 12.5,
+    "trend": "growing"
+  }
+}
+```
+
+**字段说明:**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `period` | `object` | 统计时间段 |
+| `period.startDate` | `string` | 开始日期 (ISO 8601) |
+| `period.endDate` | `string` | 结束日期 (ISO 8601) |
+| `period.months` | `number` | 统计月数 |
+| `history` | `array` | 历史数据列表 |
+| `history[].month` | `string` | 月份 (ISO 8601) |
+| `history[].newWhales` | `number` | 该月新增鲸鱼数量 |
+| `history[].cumulative` | `number` | 累计种群数量 |
+| `predictions` | `array` | 预测数据列表 |
+| `predictions[].month` | `string` | 预测月份 (ISO 8601) |
+| `predictions[].predictedCumulative` | `number` | 预测累计数量 |
+| `predictions[].isForecast` | `boolean` | 是否为预测值 |
+| `analytics` | `object` | 分析指标 |
+| `analytics.totalNewWhales` | `number` | 统计期内新增鲸鱼总数 |
+| `analytics.avgMonthlyNewWhales` | `number` | 月均新增鲸鱼数 |
+| `analytics.avgGrowthRate` | `number` | 平均增长率 (%) |
+| `analytics.trend` | `string` | 趋势类型 (`growing`/`declining`/`stable`/`accelerating`/`slowing`) |
+
+**使用场景:**
+
+- 📈 **种群监测**: 追踪鲸鱼种群数量变化趋势
+- 🔮 **预测分析**: 预测未来种群规模
+- 📊 **保护评估**: 评估保护措施的效果
+- 📋 **报告生成**: 自动生成种群增长报告
+
+**技术实现:**
+
+- 使用线性回归模型进行趋势预测
+- 基于鲸鱼首次观测时间 (`firstSightedAt`) 统计月度新增
+- 自动计算增长率并判断趋势类型
+- 趋势判断逻辑:
+  - `accelerating`: 近 3 个月平均增长率显著高于早期
+  - `slowing`: 近 3 个月平均增长率显著低于早期
+  - `growing`: 平均增长率 > 10%
+  - `declining`: 平均增长率 < -10%
+  - `stable`: 其他情况
+
+---
+
+### 18. 鲸鱼迁徙轨迹分析
 
 **GET** `/api/v1/stats/whales/:whaleId/migration`
 
@@ -1157,9 +1271,9 @@ GET /api/v1/stats/whales/550e8400-e29b-41d4-a716-446655440010/migration?days=180
 - [x] 指定物种详细统计
 - [x] 观测行为分布统计
 - [x] 性能优化：统计接口缓存
-- [x] 鲸鱼迁徙轨迹分析 ✨ **本次完成**
-- [ ] 种群增长趋势预测
+- [x] 鲸鱼迁徙轨迹分析
+- [x] 种群增长趋势预测 ✨ **本次完成**
 
 ---
 
-*最后更新：2026-03-29 (新增：鲸鱼迁徙轨迹分析 API)*
+*最后更新：2026-03-29 (新增：种群增长趋势预测 API)*

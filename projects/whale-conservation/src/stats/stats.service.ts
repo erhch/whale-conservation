@@ -698,6 +698,140 @@ export class StatsService {
   }
 
   /**
+   * 种群增长趋势预测
+   * @param months 统计月数，默认 12 个月
+   * @param forecastMonths 预测月数，默认 3 个月
+   * @returns 历史种群数量趋势及预测数据
+   */
+  async getPopulationGrowthTrend(months: number = 12, forecastMonths: number = 3) {
+    // 获取每月的鲸鱼种群数量 (按首次观测时间统计)
+    const startDate = new Date(Date.now() - months * 30 * 24 * 60 * 60 * 1000);
+
+    const monthlyData = await this.whaleRepository
+      .createQueryBuilder('whale')
+      .select("DATE_TRUNC('month', whale.firstSightedAt)", 'month')
+      .addSelect('COUNT(whale.id)', 'count')
+      .where('whale.firstSightedAt >= :startDate', { startDate })
+      .groupBy("DATE_TRUNC('month', whale.firstSightedAt)")
+      .orderBy("DATE_TRUNC('month', whale.firstSightedAt)", 'ASC')
+      .getRawMany();
+
+    // 计算累计种群数量
+    let cumulative = 0;
+    const history = monthlyData.map((item) => {
+      cumulative += parseInt(item.count, 10);
+      return {
+        month: item.month,
+        newWhales: parseInt(item.count, 10),
+        cumulative,
+      };
+    });
+
+    // 使用简单线性回归预测未来趋势
+    const predictions = this.predictPopulationGrowth(history, forecastMonths);
+
+    // 计算增长率
+    const growthRates = this.calculateGrowthRates(history);
+
+    return {
+      period: {
+        startDate: startDate.toISOString(),
+        endDate: new Date().toISOString(),
+        months,
+      },
+      history,
+      predictions,
+      analytics: {
+        totalNewWhales: cumulative,
+        avgMonthlyNewWhales: Math.round((cumulative / history.length) * 10) / 10,
+        avgGrowthRate: growthRates.avgGrowthRate,
+        trend: growthRates.trend,
+      },
+    };
+  }
+
+  /**
+   * 使用线性回归预测种群增长
+   */
+  private predictPopulationGrowth(history: Array<{ month: string; cumulative: number }>, forecastMonths: number) {
+    if (history.length < 2) {
+      return [];
+    }
+
+    // 简单线性回归：y = a + bx
+    const n = history.length;
+    const xValues = history.map((_, i) => i);
+    const yValues = history.map((h) => h.cumulative);
+
+    const sumX = xValues.reduce((a, b) => a + b, 0);
+    const sumY = yValues.reduce((a, b) => a + b, 0);
+    const sumXY = xValues.reduce((sum, x, i) => sum + x * yValues[i], 0);
+    const sumXX = xValues.reduce((sum, x) => sum + x * x, 0);
+
+    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
+
+    // 生成预测数据
+    const predictions = [];
+    const lastMonth = new Date(history[history.length - 1].month);
+
+    for (let i = 1; i <= forecastMonths; i++) {
+      const predictedMonth = new Date(lastMonth);
+      predictedMonth.setMonth(predictedMonth.getMonth() + i);
+
+      const predictedValue = Math.round(intercept + slope * (n + i - 1));
+
+      predictions.push({
+        month: predictedMonth.toISOString(),
+        predictedCumulative: Math.max(0, predictedValue),
+        isForecast: true,
+      });
+    }
+
+    return predictions;
+  }
+
+  /**
+   * 计算增长率
+   */
+  private calculateGrowthRates(history: Array<{ month: string; cumulative: number }>) {
+    if (history.length < 2) {
+      return { avgGrowthRate: 0, trend: 'stable' };
+    }
+
+    const growthRates = [];
+    for (let i = 1; i < history.length; i++) {
+      const prev = history[i - 1].cumulative;
+      const curr = history[i].cumulative;
+      if (prev > 0) {
+        growthRates.push(((curr - prev) / prev) * 100);
+      }
+    }
+
+    const avgGrowthRate = growthRates.length > 0
+      ? Math.round((growthRates.reduce((a, b) => a + b, 0) / growthRates.length) * 10) / 10
+      : 0;
+
+    // 判断趋势
+    const recentGrowth = growthRates.slice(-3);
+    const avgRecent = recentGrowth.reduce((a, b) => a + b, 0) / recentGrowth.length;
+    const avgEarlier = growthRates.slice(0, -3).reduce((a, b) => a + b, 0) / (growthRates.length - 3) || 0;
+
+    let trend = 'stable';
+    if (avgRecent > avgEarlier + 5) {
+      trend = 'accelerating';
+    } else if (avgRecent < avgEarlier - 5) {
+      trend = 'slowing';
+    } else if (avgGrowthRate > 10) {
+      trend = 'growing';
+    } else if (avgGrowthRate < -10) {
+      trend = 'declining';
+    }
+
+    return { avgGrowthRate, trend };
+  }
+
+  /**
    * 计算两点之间的球面距离 (Haversine 公式)
    * @param lat1 起点纬度
    * @param lng1 起点经度

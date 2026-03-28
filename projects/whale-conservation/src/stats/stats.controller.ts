@@ -245,4 +245,29 @@ export class StatsController {
   ) {
     return this.statsService.getWhaleMigration(whaleId, days);
   }
+
+  @Get('population/growth-trend')
+  @ApiOperation({ summary: '获取种群增长趋势预测' })
+  @ApiQuery({
+    name: 'months',
+    required: false,
+    type: Number,
+    description: '统计月数，默认 12 个月，最大 60 个月',
+    example: 12,
+  })
+  @ApiQuery({
+    name: 'forecastMonths',
+    required: false,
+    type: Number,
+    description: '预测月数，默认 3 个月，最大 12 个月',
+    example: 3,
+  })
+  async getPopulationGrowthTrend(
+    @Query('months', new ParseOptionalIntPipe({ defaultValue: 12, min: 1, max: 60 }))
+    months: number,
+    @Query('forecastMonths', new ParseOptionalIntPipe({ defaultValue: 3, min: 1, max: 12 }))
+    forecastMonths: number,
+  ) {
+    return this.statsService.getPopulationGrowthTrend(months, forecastMonths);
+  }
 }
