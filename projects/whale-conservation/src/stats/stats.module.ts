@@ -9,10 +9,11 @@ import { StatsService } from './stats.service';
 import { Species } from '../species/entities/species.entity';
 import { Whale } from '../whales/entities/whale.entity';
 import { Sighting } from '../sightings/entities/sighting.entity';
+import { Station } from '../stations/entities/station.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Species, Whale, Sighting]),
+    TypeOrmModule.forFeature([Species, Whale, Sighting, Station]),
   ],
   controllers: [StatsController],
   providers: [StatsService],

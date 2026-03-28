@@ -33,6 +33,9 @@ stats/
   "sightings": {
     "total": 238,
     "recent30Days": 15
+  },
+  "stations": {
+    "total": 8
   }
 }
 ```
@@ -45,6 +48,7 @@ stats/
 | `whales.total` | `number` | 存活鲸鱼个体总数 |
 | `sightings.total` | `number` | 历史观测记录总数 |
 | `sightings.recent30Days` | `number` | 最近 30 天观测记录数 |
+| `stations.total` | `number` | 活跃监测站点总数 |
 
 ---
 

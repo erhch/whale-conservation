@@ -9,6 +9,7 @@ import { Repository, MoreThan } from 'typeorm';
 import { Species } from '../species/entities/species.entity';
 import { Whale } from '../whales/entities/whale.entity';
 import { Sighting } from '../sightings/entities/sighting.entity';
+import { Station } from '../stations/entities/station.entity';
 
 @Injectable()
 export class StatsService {
@@ -19,6 +20,8 @@ export class StatsService {
     private whaleRepository: Repository<Whale>,
     @InjectRepository(Sighting)
     private sightingRepository: Repository<Sighting>,
+    @InjectRepository(Station)
+    private stationRepository: Repository<Station>,
   ) {}
 
   /**
@@ -28,6 +31,7 @@ export class StatsService {
     const speciesCount = await this.speciesRepository.count({ where: { isActive: true } });
     const whaleCount = await this.whaleRepository.count({ where: { lifeStatus: 'alive' } });
     const sightingCount = await this.sightingRepository.count();
+    const stationCount = await this.stationRepository.count({ where: { status: 'active' } });
 
     const recentSightings = await this.sightingRepository.count({
       where: { observedAt: MoreThan(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)) }, // 最近 30 天
@@ -43,6 +47,9 @@ export class StatsService {
       sightings: {
         total: sightingCount,
         recent30Days: recentSightings,
+      },
+      stations: {
+        total: stationCount,
       },
     };
   }
