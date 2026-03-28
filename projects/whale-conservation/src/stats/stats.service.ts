@@ -260,4 +260,26 @@ export class StatsService {
       percentage: totalSightings > 0 ? Math.round((parseInt(item.count, 10) / totalSightings) * 100) : 0,
     }));
   }
+
+  /**
+   * 月度统计
+   * 按月份统计观测记录数量
+   */
+  async getMonthlyStats(months: number = 12) {
+    const startDate = new Date(Date.now() - months * 30 * 24 * 60 * 60 * 1000);
+
+    const result = await this.sightingRepository
+      .createQueryBuilder('sighting')
+      .select("DATE_TRUNC('month', sighting.observedAt)", 'month')
+      .addSelect('COUNT(sighting.id)', 'count')
+      .where('sighting.observedAt >= :startDate', { startDate })
+      .groupBy("DATE_TRUNC('month', sighting.observedAt)")
+      .orderBy("DATE_TRUNC('month', sighting.observedAt)", 'ASC')
+      .getRawMany();
+
+    return result.map((item) => ({
+      month: item.month,
+      count: parseInt(item.count, 10),
+    }));
+  }
 }

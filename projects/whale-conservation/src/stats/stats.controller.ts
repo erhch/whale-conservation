@@ -80,4 +80,20 @@ export class StatsController {
   ) {
     return this.statsService.getTopLocations(limit);
   }
+
+  @Get('sightings/monthly')
+  @ApiOperation({ summary: '获取月度观测统计' })
+  @ApiQuery({
+    name: 'months',
+    required: false,
+    type: Number,
+    description: '统计月数，默认 12 个月，最大 60 个月',
+    example: 12,
+  })
+  async getMonthlyStats(
+    @Query('months', new ParseOptionalIntPipe({ defaultValue: 12, min: 1, max: 60 }))
+    months: number,
+  ) {
+    return this.statsService.getMonthlyStats(months);
+  }
 }
