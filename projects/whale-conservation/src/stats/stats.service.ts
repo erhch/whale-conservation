@@ -366,4 +366,60 @@ export class StatsService {
       count: parseInt(item.count, 10),
     }));
   }
+
+  /**
+   * 最近观测记录
+   * 返回最新的观测记录列表 (支持分页)
+   */
+  async getRecentSightings(limit: number = 10, offset: number = 0) {
+    const result = await this.sightingRepository
+      .createQueryBuilder('sighting')
+      .select('sighting.id', 'id')
+      .addSelect('sighting.observedAt', 'observedAt')
+      .addSelect('sighting.location', 'location')
+      .addSelect('sighting.behavior', 'behavior')
+      .addSelect('sighting.groupSize', 'groupSize')
+      .addSelect('whale.id', 'whaleId')
+      .addSelect('whale.identifier', 'whaleIdentifier')
+      .addSelect('whale.name', 'whaleName')
+      .addSelect('species.commonNameZh', 'species')
+      .addSelect('species.scientificName', 'scientificName')
+      .addSelect('station.code', 'stationCode')
+      .addSelect('station.name', 'stationName')
+      .innerJoin('sighting.whale', 'whale')
+      .innerJoin('whale.species', 'species')
+      .leftJoin('sighting.station', 'station')
+      .orderBy('sighting.observedAt', 'DESC')
+      .limit(limit)
+      .offset(offset)
+      .getRawMany();
+
+    return result.map((item) => ({
+      id: item.id,
+      observedAt: item.observedAt,
+      location: item.location,
+      behavior: item.behavior,
+      groupSize: item.groupSize ? parseInt(item.groupSize, 10) : null,
+      whale: {
+        id: item.whaleId,
+        identifier: item.whaleIdentifier,
+        name: item.whaleName,
+        species: item.species,
+        scientificName: item.scientificName,
+      },
+      station: item.stationCode
+        ? {
+            code: item.stationCode,
+            name: item.stationName,
+          }
+        : null,
+    }));
+  }
+
+  /**
+   * 获取最近观测记录总数 (用于分页)
+   */
+  async getRecentSightingsTotal() {
+    return await this.sightingRepository.count();
+  }
 }

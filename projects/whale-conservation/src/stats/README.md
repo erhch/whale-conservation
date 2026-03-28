@@ -671,6 +671,110 @@ GET /api/v1/stats/whales/active?limit=5&days=30
 
 ---
 
+### 14. 最近观测记录
+
+**GET** `/api/v1/stats/sightings/recent`
+
+获取最新的观测记录列表 (支持分页)。
+
+**查询参数:**
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `limit` | `number` | `10` | 每页数量 (1-100) |
+| `offset` | `number` | `0` | 偏移量 (用于分页) |
+
+**请求示例:**
+
+```
+GET /api/v1/stats/sightings/recent?limit=5&offset=0
+```
+
+**响应示例:**
+
+```json
+{
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "observedAt": "2026-03-29T02:15:00.000Z",
+      "location": "东海海域",
+      "behavior": "feeding",
+      "groupSize": 3,
+      "whale": {
+        "id": "550e8400-e29b-41d4-a716-446655440010",
+        "identifier": "BCX001",
+        "name": "大白",
+        "species": "座头鲸",
+        "scientificName": "Megaptera novaeangliae"
+      },
+      "station": {
+        "code": "ST001",
+        "name": "东海监测站"
+      }
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440001",
+      "observedAt": "2026-03-28T18:30:00.000Z",
+      "location": "南海海域",
+      "behavior": "breaching",
+      "groupSize": 1,
+      "whale": {
+        "id": "550e8400-e29b-41d4-a716-446655440011",
+        "identifier": "BCX005",
+        "name": "阿浪",
+        "species": "蓝鲸",
+        "scientificName": "Balaenoptera musculus"
+      },
+      "station": {
+        "code": "ST002",
+        "name": "南海考察船"
+      }
+    }
+  ],
+  "pagination": {
+    "limit": 5,
+    "offset": 0,
+    "total": 238,
+    "hasMore": true
+  }
+}
+```
+
+**字段说明:**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `data` | `array` | 观测记录列表 |
+| `data[].id` | `string` | 观测记录 UUID |
+| `data[].observedAt` | `string` | 观测时间 (ISO 8601) |
+| `data[].location` | `string` | 观测地点描述 |
+| `data[].behavior` | `string` | 行为类型 (feeding/breaching/socializing 等) |
+| `data[].groupSize` | `number` | 群体数量 (可能为 null) |
+| `data[].whale` | `object` | 鲸鱼信息 |
+| `data[].whale.id` | `string` | 鲸鱼 UUID |
+| `data[].whale.identifier` | `string` | 鲸鱼编号 |
+| `data[].whale.name` | `string` | 鲸鱼昵称 (可能为 null) |
+| `data[].whale.species` | `string` | 物种中文名 |
+| `data[].whale.scientificName` | `string` | 物种学名 |
+| `data[].station` | `object` | 监测站信息 (可能为 null) |
+| `data[].station.code` | `string` | 站点代码 |
+| `data[].station.name` | `string` | 站点名称 |
+| `pagination` | `object` | 分页信息 |
+| `pagination.limit` | `number` | 每页数量 |
+| `pagination.offset` | `number` | 当前偏移量 |
+| `pagination.total` | `number` | 总记录数 |
+| `pagination.hasMore` | `boolean` | 是否有更多数据 |
+
+**使用场景:**
+
+- 📱 **实时动态**: 展示最新观测活动
+- 🔔 **推送通知**: 新观测记录提醒
+- 📋 **数据审核**: 查看最新录入的观测数据
+- 🗺️ **地图标记**: 在地图上显示最近观测点
+
+---
+
 ## 待扩展功能
 
 - [x] 按监测站点统计
@@ -680,10 +784,11 @@ GET /api/v1/stats/whales/active?limit=5&days=30
 - [x] 热门观测地点排行
 - [x] 月度观测统计
 - [x] 季度/年度统计
-- [x] 鲸鱼个体活跃度分析 ✨ **本次完成**
+- [x] 鲸鱼个体活跃度分析
+- [x] 最近观测记录列表 ✨ **本次完成**
 - [ ] 鲸鱼迁徙轨迹分析
 - [ ] 种群增长趋势预测
 
 ---
 
-*最后更新：2026-03-29 (新增：活跃鲸鱼个体排行 API)*
+*最后更新：2026-03-29 (新增：最近观测记录 API)*

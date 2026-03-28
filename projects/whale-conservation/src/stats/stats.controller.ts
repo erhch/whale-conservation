@@ -153,4 +153,42 @@ export class StatsController {
   ) {
     return this.statsService.getActiveWhales(limit, days);
   }
+
+  @Get('sightings/recent')
+  @ApiOperation({ summary: '获取最近观测记录' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: '每页数量，默认 10 条，最大 100 条',
+    example: 10,
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    type: Number,
+    description: '偏移量 (用于分页)，默认 0',
+    example: 0,
+  })
+  async getRecentSightings(
+    @Query('limit', new ParseOptionalIntPipe({ defaultValue: 10, min: 1, max: 100 }))
+    limit: number,
+    @Query('offset', new ParseOptionalIntPipe({ defaultValue: 0, min: 0 }))
+    offset: number,
+  ) {
+    const [data, total] = await Promise.all([
+      this.statsService.getRecentSightings(limit, offset),
+      this.statsService.getRecentSightingsTotal(),
+    ]);
+
+    return {
+      data,
+      pagination: {
+        limit,
+        offset,
+        total,
+        hasMore: offset + limit < total,
+      },
+    };
+  }
 }
