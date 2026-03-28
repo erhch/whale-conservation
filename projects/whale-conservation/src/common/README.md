@@ -257,6 +257,7 @@ getStatistics() {
 - `ParseOptionalFloatPipe` - 可选浮点数解析管道 (支持默认值、范围验证、精度控制)
 - `ParseOptionalBooleanPipe` - 可选布尔值解析管道 (支持多种格式)
 - `ParseOptionalDatePipe` - 可选日期解析管道 (支持默认值、日期范围验证)
+- `ParseOptionalStringPipe` - 可选字符串解析管道 (支持修剪、长度验证、正则匹配、大小写转换)
 
 **使用示例:**
 
@@ -300,14 +301,57 @@ fromDate: Date;
 observationDate?: Date;
 ```
 
+**ParseOptionalStringPipe 使用示例:**
+
+```typescript
+import { ParseOptionalStringPipe } from '@/common/pipes';
+
+// 搜索关键词 - 自动修剪，最大长度 50
+@Query('keyword', new ParseOptionalStringPipe({ maxLength: 50, trim: true }))
+keyword?: string;
+
+// 鲸鱼名称 - 最小 2 字符，最大 100 字符
+@Query('name', new ParseOptionalStringPipe({ minLength: 2, maxLength: 100 }))
+name?: string;
+
+// 邮箱格式验证
+@Query('email', new ParseOptionalStringPipe({ 
+  pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  patternMessage: '请输入有效的邮箱地址'
+}))
+email?: string;
+
+// 状态码 - 转为小写，支持默认值
+@Query('status', new ParseOptionalStringPipe({ 
+  defaultValue: 'active',
+  toLowerCase: true 
+}))
+status: string;
+
+// 国家代码 - 转大写，固定 2 字符
+@Query('countryCode', new ParseOptionalStringPipe({ 
+  minLength: 2,
+  maxLength: 2,
+  toUpperCase: true 
+}))
+countryCode?: string;
+```
+
 **选项说明:**
 
 | 选项 | 类型 | 说明 |
 |------|------|------|
-| `defaultValue` | `number \| boolean \| Date` | 当参数为空时的默认值 |
+| `defaultValue` | `number \| boolean \| Date \| string` | 当参数为空时的默认值 |
 | `min` | `number \| Date` | 最小值限制 (整数/浮点数/日期管道) |
 | `max` | `number \| Date` | 最大值限制 (整数/浮点数/日期管道) |
 | `precision` | `number` | 小数位数精度 (仅浮点数管道) |
+| `minLength` | `number` | 最小长度 (仅字符串管道) |
+| `maxLength` | `number` | 最大长度 (仅字符串管道) |
+| `pattern` | `RegExp` | 正则表达式匹配 (仅字符串管道) |
+| `patternMessage` | `string` | 正则匹配失败的错误消息 |
+| `trim` | `boolean` | 自动修剪首尾空格 (默认 true) |
+| `toLowerCase` | `boolean` | 转为小写 |
+| `toUpperCase` | `boolean` | 转为大写 |
 
 **ParseOptionalBooleanPipe 支持的输入格式:**
 

@@ -6,3 +6,4 @@ export { ParseOptionalIntPipe, type ParseOptionalIntOptions } from './parse-opti
 export { ParseOptionalFloatPipe, type ParseOptionalFloatOptions } from './parse-optional-float.pipe';
 export { ParseOptionalBooleanPipe, type ParseOptionalBooleanOptions } from './parse-optional-boolean.pipe';
 export { ParseOptionalDatePipe, type ParseOptionalDateOptions } from './parse-optional-date.pipe';
+export { ParseOptionalStringPipe, type ParseOptionalStringOptions } from './parse-optional-string.pipe';
