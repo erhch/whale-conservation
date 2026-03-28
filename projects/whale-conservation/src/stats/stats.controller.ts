@@ -191,4 +191,10 @@ export class StatsController {
       },
     };
   }
+
+  @Get('species/:speciesId')
+  @ApiOperation({ summary: '获取指定物种的详细统计' })
+  async getSpeciesStats(@Param('speciesId') speciesId: string) {
+    return this.statsService.getSpeciesStats(speciesId);
+  }
 }

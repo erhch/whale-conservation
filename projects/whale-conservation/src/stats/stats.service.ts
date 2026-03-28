@@ -422,4 +422,117 @@ export class StatsService {
   async getRecentSightingsTotal() {
     return await this.sightingRepository.count();
   }
+
+  /**
+   * 获取指定物种的详细统计
+   * @param speciesId 物种 ID
+   */
+  async getSpeciesStats(speciesId: string) {
+    // 获取物种基本信息
+    const species = await this.speciesRepository.findOne({
+      where: { id: speciesId, isActive: true },
+      select: ['id', 'scientificName', 'commonNameZh', 'commonNameEn', 'iucnStatus'],
+    });
+
+    if (!species) {
+      throw new Error(`Species with id ${speciesId} not found`);
+    }
+
+    // 获取该物种的鲸鱼个体总数
+    const totalWhales = await this.whaleRepository.count({
+      where: { speciesId },
+    });
+
+    // 获取存活个体数
+    const aliveWhales = await this.whaleRepository.count({
+      where: { speciesId, lifeStatus: 'alive' },
+    });
+
+    // 获取性别分布
+    const sexDistribution = await this.whaleRepository
+      .createQueryBuilder('whale')
+      .select('whale.sex', 'sex')
+      .addSelect('COUNT(whale.id)', 'count')
+      .where('whale.speciesId = :speciesId', { speciesId })
+      .groupBy('whale.sex')
+      .getRawMany();
+
+    // 获取观测记录总数
+    const totalSightings = await this.sightingRepository
+      .createQueryBuilder('sighting')
+      .innerJoin('sighting.whale', 'whale')
+      .where('whale.speciesId = :speciesId', { speciesId })
+      .getCount();
+
+    // 获取最近 30 天观测记录数
+    const recentSightings = await this.sightingRepository
+      .createQueryBuilder('sighting')
+      .innerJoin('sighting.whale', 'whale')
+      .where('whale.speciesId = :speciesId', { speciesId })
+      .andWhere('sighting.observedAt >= :startDate', {
+        startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      })
+      .getCount();
+
+    // 获取平均群体大小
+    const avgGroupSize = await this.sightingRepository
+      .createQueryBuilder('sighting')
+      .innerJoin('sighting.whale', 'whale')
+      .select('AVG(sighting.groupSize)', 'avg')
+      .where('whale.speciesId = :speciesId', { speciesId })
+      .andWhere('sighting.groupSize IS NOT NULL')
+      .getRawOne();
+
+    // 获取热门观测地点 (Top 5)
+    const topLocations = await this.sightingRepository
+      .createQueryBuilder('sighting')
+      .select('sighting.locationName', 'location')
+      .addSelect('COUNT(sighting.id)', 'count')
+      .innerJoin('sighting.whale', 'whale')
+      .where('whale.speciesId = :speciesId', { speciesId })
+      .andWhere('sighting.locationName IS NOT NULL')
+      .groupBy('sighting.locationName')
+      .orderBy('count', 'DESC')
+      .limit(5)
+      .getRawMany();
+
+    // 格式化性别分布
+    const sexBreakdown: Record<string, number> = {};
+    let totalSexCount = 0;
+    sexDistribution.forEach((item) => {
+      const sex = item.sex || 'unknown';
+      const count = parseInt(item.count, 10);
+      sexBreakdown[sex] = count;
+      totalSexCount += count;
+    });
+
+    return {
+      species: {
+        id: species.id,
+        scientificName: species.scientificName,
+        commonNameZh: species.commonNameZh,
+        commonNameEn: species.commonNameEn,
+        iucnStatus: species.iucnStatus,
+      },
+      population: {
+        total: totalWhales,
+        alive: aliveWhales,
+        survivalRate: totalWhales > 0 ? Math.round((aliveWhales / totalWhales) * 100) : 0,
+      },
+      sexDistribution: {
+        breakdown: sexBreakdown,
+        total: totalSexCount,
+      },
+      sightings: {
+        total: totalSightings,
+        recent30Days: recentSightings,
+        avgGroupSize: avgGroupSize?.avg ? Math.round(parseFloat(avgGroupSize.avg) * 10) / 10 : null,
+      },
+      topLocations: topLocations.map((item, index) => ({
+        rank: index + 1,
+        location: item.location,
+        count: parseInt(item.count, 10),
+      })),
+    };
+  }
 }

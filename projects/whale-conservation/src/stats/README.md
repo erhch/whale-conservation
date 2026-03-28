@@ -775,6 +775,105 @@ GET /api/v1/stats/sightings/recent?limit=5&offset=0
 
 ---
 
+### 15. 指定物种详细统计
+
+**GET** `/api/v1/stats/species/:speciesId`
+
+获取指定物种的详细统计数据，包括种群数量、性别分布、观测记录等。
+
+**路径参数:**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `speciesId` | `string` | 物种 UUID |
+
+**请求示例:**
+
+```
+GET /api/v1/stats/species/550e8400-e29b-41d4-a716-446655440000
+```
+
+**响应示例:**
+
+```json
+{
+  "species": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "scientificName": "Megaptera novaeangliae",
+    "commonNameZh": "座头鲸",
+    "commonNameEn": "Humpback Whale",
+    "iucnStatus": "LC"
+  },
+  "population": {
+    "total": 18,
+    "alive": 15,
+    "survivalRate": 83
+  },
+  "sexDistribution": {
+    "breakdown": {
+      "M": 8,
+      "F": 7,
+      "U": 3
+    },
+    "total": 18
+  },
+  "sightings": {
+    "total": 120,
+    "recent30Days": 8,
+    "avgGroupSize": 2.5
+  },
+  "topLocations": [
+    {
+      "rank": 1,
+      "location": "东海海域",
+      "count": 45
+    },
+    {
+      "rank": 2,
+      "location": "南海海域",
+      "count": 32
+    },
+    {
+      "rank": 3,
+      "location": "黄海海域",
+      "count": 18
+    }
+  ]
+}
+```
+
+**字段说明:**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `species` | `object` | 物种基本信息 |
+| `species.id` | `string` | 物种 UUID |
+| `species.scientificName` | `string` | 学名 |
+| `species.commonNameZh` | `string` | 中文名 |
+| `species.commonNameEn` | `string` | 英文名 |
+| `species.iucnStatus` | `string` | IUCN 保护等级 |
+| `population.total` | `number` | 该物种记录的鲸鱼个体总数 |
+| `population.alive` | `number` | 存活个体数量 |
+| `population.survivalRate` | `number` | 存活率百分比 |
+| `sexDistribution.breakdown` | `object` | 性别分布 (M/F/U) |
+| `sexDistribution.total` | `number` | 有性别记录的个体总数 |
+| `sightings.total` | `number` | 该物种的观测记录总数 |
+| `sightings.recent30Days` | `number` | 最近 30 天观测记录数 |
+| `sightings.avgGroupSize` | `number` | 平均群体大小 (可能为 null) |
+| `topLocations` | `array` | 热门观测地点 Top 5 |
+| `topLocations[].rank` | `number` | 排名 |
+| `topLocations[].location` | `string` | 地点名称 |
+| `topLocations[].count` | `number` | 该地点的观测记录数 |
+
+**使用场景:**
+
+- 📊 **物种详情页**: 展示单个物种的综合统计数据
+- 🐋 **保护报告**: 生成特定物种的保护状况报告
+- 📈 **趋势分析**: 分析物种的观测热度分布
+- 🗺️ **栖息地研究**: 了解物种的主要活动区域
+
+---
+
 ## 待扩展功能
 
 - [x] 按监测站点统计
@@ -785,10 +884,11 @@ GET /api/v1/stats/sightings/recent?limit=5&offset=0
 - [x] 月度观测统计
 - [x] 季度/年度统计
 - [x] 鲸鱼个体活跃度分析
-- [x] 最近观测记录列表 ✨ **本次完成**
+- [x] 最近观测记录列表
+- [x] 指定物种详细统计 ✨ **本次完成**
 - [ ] 鲸鱼迁徙轨迹分析
 - [ ] 种群增长趋势预测
 
 ---
 
-*最后更新：2026-03-29 (新增：最近观测记录 API)*
+*最后更新：2026-03-29 (新增：最近观测记录 API、指定物种详细统计 API)*
