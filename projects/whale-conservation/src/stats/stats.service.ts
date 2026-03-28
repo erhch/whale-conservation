@@ -96,4 +96,35 @@ export class StatsService {
       count: parseInt(item.count, 10),
     }));
   }
+
+  /**
+   * 监测站点统计
+   */
+  async getStationStats() {
+    const result = await this.sightingRepository
+      .createQueryBuilder('sighting')
+      .select('station.id', 'id')
+      .addSelect('station.code', 'code')
+      .addSelect('station.name', 'name')
+      .addSelect('station.type', 'type')
+      .addSelect('station.status', 'status')
+      .addSelect('COUNT(sighting.id)', 'sightingCount')
+      .innerJoin('sighting.station', 'station')
+      .groupBy('station.id')
+      .addGroupBy('station.code')
+      .addGroupBy('station.name')
+      .addGroupBy('station.type')
+      .addGroupBy('station.status')
+      .orderBy('sightingCount', 'DESC')
+      .getRawMany();
+
+    return result.map((item) => ({
+      id: item.id,
+      code: item.code,
+      name: item.name,
+      type: item.type,
+      status: item.status,
+      sightingCount: parseInt(item.sightingCount, 10),
+    }));
+  }
 }

@@ -140,6 +140,56 @@ GET /api/v1/stats/sightings/trend?days=7
 
 ---
 
+### 4. 监测站点统计
+
+**GET** `/api/v1/stats/stations`
+
+获取各监测站点的观测记录统计（按观测数量降序排列）。
+
+**响应示例:**
+
+```json
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "code": "ST001",
+    "name": "东海监测站",
+    "type": "fixed",
+    "status": "active",
+    "sightingCount": 45
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "code": "ST002",
+    "name": "南海考察船",
+    "type": "vessel",
+    "status": "active",
+    "sightingCount": 32
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440002",
+    "code": "ST003",
+    "name": "黄海浮标站",
+    "type": "fixed",
+    "status": "active",
+    "sightingCount": 18
+  }
+]
+```
+
+**字段说明:**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | `string` | 站点 UUID |
+| `code` | `string` | 站点代码 |
+| `name` | `string` | 站点名称 |
+| `type` | `string` | 站点类型 (`fixed`/`mobile`/`vessel`) |
+| `status` | `string` | 站点状态 (`active`/`inactive`/`maintenance`) |
+| `sightingCount` | `number` | 该站点的观测记录总数 |
+
+---
+
 ## 使用示例
 
 ### JavaScript/TypeScript
@@ -199,7 +249,7 @@ curl -X GET "http://localhost:3000/api/v1/stats/sightings/trend?days=7"
 
 ## 待扩展功能
 
-- [ ] 按监测站点统计
+- [x] 按监测站点统计
 - [ ] 按月份/季度/年度统计
 - [ ] 鲸鱼个体活跃度分析
 - [ ] 热门观测地点排行
@@ -207,4 +257,4 @@ curl -X GET "http://localhost:3000/api/v1/stats/sightings/trend?days=7"
 
 ---
 
-*最后更新：2026-03-28*
+*最后更新：2026-03-28 (新增：监测站点统计 API)*

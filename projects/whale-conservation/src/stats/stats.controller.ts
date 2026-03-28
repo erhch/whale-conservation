@@ -40,4 +40,10 @@ export class StatsController {
   ) {
     return this.statsService.getSightingsTrend(days);
   }
+
+  @Get('stations')
+  @ApiOperation({ summary: '获取监测站点统计' })
+  async getStationStats() {
+    return this.statsService.getStationStats();
+  }
 }
