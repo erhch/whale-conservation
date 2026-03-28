@@ -2,7 +2,7 @@
 
 > 鲸创管理系统 - 公共工具模块快速上手指南
 
-版本：v0.1.1  
+版本：v0.1.2  
 最后更新：2026-03-29
 
 ---
@@ -310,6 +310,101 @@ findAll() {
 - 🔒 无状态 - 服务器无需维护缓存状态，ETag 从响应体生成
 
 **注意:** ETag 仅对 `GET` 和 `HEAD` 请求生效。
+
+### 🛡️ 场景 11: 请求速率限制 (Rate Limiting)
+
+```typescript
+import { UseInterceptors, RateLimit, RateLimitTTL } from '@/common/interceptors';
+import { RateLimitInterceptor } from '@/common/interceptors';
+
+@Controller('auth')
+export class AuthController {
+  // 登录接口 - 严格限制防止暴力破解 (10 次/分钟)
+  @UseInterceptors(RateLimitInterceptor)
+  @RateLimit(10)
+  @RateLimitTTL(60)
+  @Post('login')
+  login(@Body() dto: LoginDto) {
+    return this.authService.login(dto);
+  }
+  
+  // 公开数据 - 宽松限制 (1000 次/分钟)
+  @UseInterceptors(RateLimitInterceptor)
+  @RateLimit(1000)
+  @RateLimitTTL(60)
+  @Get('public/species')
+  getPublicSpecies() {
+    return this.speciesService.findAll();
+  }
+  
+  // 默认限制 - 100 次/分钟 (无需装饰器)
+  @UseInterceptors(RateLimitInterceptor)
+  @Get('whales')
+  findAll() {
+    return this.whalesService.findAll();
+  }
+}
+```
+
+**响应示例 (触发限制时):**
+
+```json
+{
+  "statusCode": 429,
+  "timestamp": "2026-03-29T10:30:00.000Z",
+  "path": "/api/v1/auth/login",
+  "message": "请求过于频繁，请 45 秒后重试",
+  "error": "Too Many Requests",
+  "description": "限制：10 次/60 秒"
+}
+```
+
+**使用场景:**
+
+| 场景 | 推荐限制 | 说明 |
+|------|----------|------|
+| 登录/注册 | 5-10 次/分钟 | 防止暴力破解 |
+| 密码重置 | 3 次/分钟 | 防止滥用 |
+| 敏感数据导出 | 10 次/小时 | 防止数据爬取 |
+| 公开 API | 100-1000 次/分钟 | 防止 DDoS |
+| 内部接口 | 默认 100 次/分钟 | 一般防护 |
+
+**工作原理:**
+
+1. **基于 IP + 路由** - 每个客户端 IP 的每个路由独立计数
+2. **内存存储** - 使用 Map 存储请求计数，适合单机部署
+3. **自动清理** - 每分钟自动清理过期记录
+4. **支持反向代理** - 自动识别 `X-Forwarded-For` 和 `X-Real-IP`
+
+**高级用法:**
+
+```typescript
+// 在监控接口中查看速率限制统计
+@Controller('admin')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.ADMIN)
+export class AdminController {
+  @Get('rate-limit-stats')
+  getRateLimitStats() {
+    const interceptor = this.rateLimitInterceptor;
+    return interceptor.getStats();
+  }
+  
+  // 清除指定 IP 的限制记录
+  @Post('rate-limit/clear/:ip')
+  clearRateLimit(@Param('ip') ip: string) {
+    this.rateLimitInterceptor.clearClient(ip);
+    return { success: true, message: `已清除 ${ip} 的限制记录` };
+  }
+}
+```
+
+**⚠️ 注意事项:**
+
+1. **单机限制** - 内存存储不适用于分布式集群 (集群需使用 Redis)
+2. **IP 识别** - 确保反向代理正确传递 `X-Forwarded-For`
+3. **动态调整** - 根据业务负载调整限制阈值
+4. **白名单** - 内部服务/IP 可考虑 exempt 限制
 
 ---
 
