@@ -10,13 +10,20 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 
-import { StationsService } from './stations.service';
-import { Station } from './entities/station.entity';
+import { StationsService, StationsFilter } from './stations.service';
+import { Station, StationType, StationStatus } from './entities/station.entity';
+import { CreateStationDto, UpdateStationDto } from './dto/station.dto';
+import { CacheInterceptor } from '../common/interceptors/cache.interceptor';
+import { CacheTTL } from '../common/decorators/cache-ttl.decorator';
+import { ParseOptionalIntPipe } from '../common/pipes/parse-optional-int.pipe';
+import { Public } from '../common/decorators/public.decorator';
 
 @ApiTags('stations')
 @Controller('stations')
@@ -24,18 +31,39 @@ export class StationsController {
   constructor(private stationsService: StationsService) {}
 
   @Get()
-  @ApiOperation({ summary: '获取所有监测站点' })
-  async findAll(): Promise<Station[]> {
-    return this.stationsService.findAll();
+  @Public()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(300) // 5 分钟缓存
+  @ApiOperation({ summary: '获取监测站点列表 (支持分页和筛选)' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: '页码 (默认 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: '每页数量 (默认 10, 最大 100)' })
+  @ApiQuery({ name: 'type', required: false, enum: StationType, description: '站点类型筛选' })
+  @ApiQuery({ name: 'status', required: false, enum: StationStatus, description: '站点状态筛选' })
+  async findAll(
+    @Query('page', new ParseOptionalIntPipe({ defaultValue: 1, min: 1 })) page: number,
+    @Query('limit', new ParseOptionalIntPipe({ defaultValue: 10, min: 1, max: 100 })) limit: number,
+    @Query('type') type?: StationType,
+    @Query('status') status?: StationStatus,
+  ): Promise<any> {
+    const filter: StationsFilter = { page, limit };
+    if (type) filter.type = type;
+    if (status) filter.status = status;
+    return this.stationsService.findAll(filter);
   }
 
   @Get('active')
+  @Public()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(300)
   @ApiOperation({ summary: '获取活跃站点' })
   async findActive(): Promise<Station[]> {
     return this.stationsService.findActive();
   }
 
   @Get(':id')
+  @Public()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(300)
   @ApiOperation({ summary: '获取单个站点详情' })
   async findOne(@Param('id') id: string): Promise<Station> {
     return this.stationsService.findOne(id);
@@ -45,7 +73,7 @@ export class StationsController {
   @ApiOperation({ summary: '创建新站点' })
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
-  async create(@Body() createStationDto: any): Promise<Station> {
+  async create(@Body() createStationDto: CreateStationDto): Promise<Station> {
     return this.stationsService.create(createStationDto);
   }
 
@@ -53,7 +81,7 @@ export class StationsController {
   @ApiOperation({ summary: '更新站点信息' })
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
-  async update(@Param('id') id: string, @Body() updateStationDto: any): Promise<Station> {
+  async update(@Param('id') id: string, @Body() updateStationDto: UpdateStationDto): Promise<Station> {
     return this.stationsService.update(id, updateStationDto);
   }
 
