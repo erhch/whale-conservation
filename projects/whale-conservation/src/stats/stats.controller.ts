@@ -2,7 +2,7 @@
  * 统计分析控制器
  */
 
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 
 import { StatsService } from './stats.service';
@@ -79,6 +79,22 @@ export class StatsController {
     limit: number,
   ) {
     return this.statsService.getTopLocations(limit);
+  }
+
+  @Get('sightings/weekly')
+  @ApiOperation({ summary: '获取周度观测统计' })
+  @ApiQuery({
+    name: 'weeks',
+    required: false,
+    type: Number,
+    description: '统计周数，默认 12 周，最大 52 周',
+    example: 12,
+  })
+  async getWeeklyStats(
+    @Query('weeks', new ParseOptionalIntPipe({ defaultValue: 12, min: 1, max: 52 }))
+    weeks: number,
+  ) {
+    return this.statsService.getWeeklyStats(weeks);
   }
 
   @Get('sightings/monthly')

@@ -262,6 +262,28 @@ export class StatsService {
   }
 
   /**
+   * 周度统计
+   * 按周统计观测记录数量
+   */
+  async getWeeklyStats(weeks: number = 12) {
+    const startDate = new Date(Date.now() - weeks * 7 * 24 * 60 * 60 * 1000);
+
+    const result = await this.sightingRepository
+      .createQueryBuilder('sighting')
+      .select("DATE_TRUNC('week', sighting.observedAt)", 'week')
+      .addSelect('COUNT(sighting.id)', 'count')
+      .where('sighting.observedAt >= :startDate', { startDate })
+      .groupBy("DATE_TRUNC('week', sighting.observedAt)")
+      .orderBy("DATE_TRUNC('week', sighting.observedAt)", 'ASC')
+      .getRawMany();
+
+    return result.map((item) => ({
+      week: item.week,
+      count: parseInt(item.count, 10),
+    }));
+  }
+
+  /**
    * 月度统计
    * 按月份统计观测记录数量
    */
