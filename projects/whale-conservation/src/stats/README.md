@@ -940,6 +940,61 @@ GET /api/v1/stats/species/550e8400-e29b-41d4-a716-446655440000
 
 ---
 
+### 16. 观测行为分布统计
+
+**GET** `/api/v1/stats/sightings/behaviors`
+
+获取各种观测行为 (feeding/breaching/socializing 等) 的分布统计。
+
+**响应示例:**
+
+```json
+[
+  {
+    "behavior": "feeding",
+    "count": 95,
+    "percentage": 40
+  },
+  {
+    "behavior": "breaching",
+    "count": 57,
+    "percentage": 24
+  },
+  {
+    "behavior": "socializing",
+    "count": 48,
+    "percentage": 20
+  },
+  {
+    "behavior": "resting",
+    "count": 24,
+    "percentage": 10
+  },
+  {
+    "behavior": "migrating",
+    "count": 14,
+    "percentage": 6
+  }
+]
+```
+
+**字段说明:**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `behavior` | `string` | 行为类型 (feeding/breaching/socializing/resting/migrating 等) |
+| `count` | `number` | 该行为的观测记录总数 |
+| `percentage` | `number` | 占总观测记录的百分比 |
+
+**使用场景:**
+
+- 📊 **行为分析**: 了解鲸鱼的主要活动类型
+- 📈 **生态研究**: 分析不同行为的发生频率
+- 🎯 **观测优化**: 指导观测站重点关注的行为类型
+- 📱 **科普展示**: 向公众展示鲸鱼的多样化行为
+
+---
+
 ## 待扩展功能
 
 - [x] 按监测站点统计
@@ -947,15 +1002,16 @@ GET /api/v1/stats/species/550e8400-e29b-41d4-a716-446655440000
 - [x] 鲸鱼性别分布
 - [x] 物种出现频率统计
 - [x] 热门观测地点排行
-- [x] 周度观测统计 ✨ **本次完成**
+- [x] 周度观测统计
 - [x] 月度观测统计
 - [x] 季度/年度统计
 - [x] 鲸鱼个体活跃度分析
 - [x] 最近观测记录列表
 - [x] 指定物种详细统计
+- [x] 观测行为分布统计 ✨ **本次完成**
 - [ ] 鲸鱼迁徙轨迹分析
 - [ ] 种群增长趋势预测
 
 ---
 
-*最后更新：2026-03-29 (新增：周度观测统计 API、修复 Param 导入)*
+*最后更新：2026-03-29 (新增：观测行为分布统计 API)*

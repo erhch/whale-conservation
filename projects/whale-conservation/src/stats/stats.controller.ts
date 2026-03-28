@@ -213,4 +213,10 @@ export class StatsController {
   async getSpeciesStats(@Param('speciesId') speciesId: string) {
     return this.statsService.getSpeciesStats(speciesId);
   }
+
+  @Get('sightings/behaviors')
+  @ApiOperation({ summary: '获取观测行为分布统计' })
+  async getBehaviorDistribution() {
+    return this.statsService.getBehaviorDistribution();
+  }
 }

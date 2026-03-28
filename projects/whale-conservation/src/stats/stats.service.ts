@@ -557,4 +557,27 @@ export class StatsService {
       })),
     };
   }
+
+  /**
+   * 观测行为分布统计
+   * 统计各种行为 (feeding/breaching/socializing 等) 的出现频率
+   */
+  async getBehaviorDistribution() {
+    const result = await this.sightingRepository
+      .createQueryBuilder('sighting')
+      .select('sighting.behavior', 'behavior')
+      .addSelect('COUNT(sighting.id)', 'count')
+      .where('sighting.behavior IS NOT NULL')
+      .groupBy('sighting.behavior')
+      .orderBy('count', 'DESC')
+      .getRawMany();
+
+    const totalSightings = result.reduce((sum, item) => sum + parseInt(item.count, 10), 0);
+
+    return result.map((item) => ({
+      behavior: item.behavior,
+      count: parseInt(item.count, 10),
+      percentage: totalSightings > 0 ? Math.round((parseInt(item.count, 10) / totalSightings) * 100) : 0,
+    }));
+  }
 }
