@@ -61,6 +61,7 @@ app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 - `CacheInterceptor` - 响应缓存 (支持自定义缓存键和 TTL)
 - `TimeoutInterceptor` - 请求超时控制 (防止慢查询阻塞资源)
 - `RateLimitInterceptor` - 请求速率限制 (防止 API 滥用和 DDoS)
+- `ETagInterceptor` - HTTP 条件请求支持 (基于 ETag 的客户端缓存验证)
 
 ### 📁 Interceptors (拦截器) - 详细用法
 
@@ -363,6 +364,112 @@ this.rateLimitInterceptor.clearAll();
 const stats = this.rateLimitInterceptor.getStats();
 console.log(`当前活跃客户端：${stats.totalKeys}`);
 ```
+
+### 📁 Interceptors (拦截器) - ETagInterceptor
+
+**ETagInterceptor 使用示例:**
+
+```typescript
+import { UseInterceptors } from '@nestjs/common';
+import { ETagInterceptor, ETag } from '@/common/interceptors';
+
+// 基础用法 - 强验证 ETag
+@UseInterceptors(ETagInterceptor)
+@Get('species')
+findAllSpecies() {
+  return this.speciesService.findAll();
+}
+
+// 弱验证 ETag - 适用于语义相同但字节不同的响应
+@UseInterceptors(ETagInterceptor)
+@ETag(true)  // 启用弱验证
+@Get('species/:id')
+findOneSpecies(@Param('id') id: string) {
+  return this.speciesService.findOne(id);
+}
+```
+
+**工作原理:**
+
+1. **首次请求** - 服务器生成 ETag 并返回，客户端缓存响应和 ETag
+2. **后续请求** - 客户端发送 `If-None-Match: <etag>` 头
+3. **内容未变** - 服务器返回 `304 Not Modified` (无响应体，节省带宽)
+4. **内容已变** - 服务器返回 `200 OK` + 新响应体 + 新 ETag
+
+**响应头:**
+
+- `ETag: "<hash>"` - 强验证 ETag (字节级精确匹配)
+- `ETag: W/"<hash>"` - 弱验证 ETag (语义级匹配)
+- `Vary: If-None-Match` - 告知缓存服务器根据 If-None-Match 区分缓存
+
+**HTTP 条件请求示例:**
+
+```bash
+# 首次请求
+$ curl -i https://api.example.com/api/v1/species
+HTTP/1.1 200 OK
+ETag: "a1b2c3d4e5f6g7h8"
+Content-Type: application/json
+
+[...]
+
+# 后续请求 (内容未变)
+$ curl -i -H 'If-None-Match: "a1b2c3d4e5f6g7h8"' https://api.example.com/api/v1/species
+HTTP/1.1 304 Not Modified
+ETag: "a1b2c3d4e5f6g7h8"
+
+# (无响应体)
+
+# 后续请求 (内容已变)
+$ curl -i -H 'If-None-Match: "old-etag-value"' https://api.example.com/api/v1/species
+HTTP/1.1 200 OK
+ETag: "new-etag-value"
+Content-Type: application/json
+
+[新响应体]
+```
+
+**强验证 vs 弱验证:**
+
+| 类型 | 格式 | 适用场景 | 说明 |
+|------|------|----------|------|
+| 强验证 | `"abc123"` | API 响应、精确数据 | 字节级精确匹配，响应体必须完全相同 |
+| 弱验证 | `W/"abc123"` | HTML 页面、动态内容 | 语义级匹配，允许细微差异 (如时间戳) |
+
+**适用场景:**
+
+- ✅ **物种列表查询** - 数据变化频率低，客户端可长期缓存
+- ✅ **监测站点数据** - 读多写少，减少重复传输
+- ✅ **统计分析接口** - 计算开销大，304 响应节省服务器资源
+- ✅ **配置文件/元数据** - 几乎不变，适合条件请求
+- ❌ **实时数据** - 每秒变化的数据 (如实时位置追踪)
+- ❌ **用户个性化内容** - 每个用户不同的响应
+
+**与 CacheInterceptor 配合使用:**
+
+```typescript
+// 服务器缓存 + 客户端条件请求 - 双重缓存优化
+@UseInterceptors(CacheInterceptor, ETagInterceptor)
+@CacheTTL(300)  // 服务器缓存 5 分钟
+@Get('statistics')
+getStatistics() {
+  return this.statsService.getStatistics();
+}
+```
+
+**优势:**
+
+1. 📉 **减少带宽** - 304 响应无响应体，显著减少数据传输
+2. ⚡ **降低延迟** - 客户端可直接使用本地缓存，无需等待完整响应
+3. 💾 **减轻服务器负载** - 304 响应处理开销远小于完整响应
+4. 🔄 **自动失效** - 内容变化时自动返回新数据，无需手动管理缓存
+
+**注意事项:**
+
+1. ⚠️ **仅支持 GET/HEAD** - ETag 只对安全方法生效
+2. ⚠️ **客户端支持** - 需要客户端正确发送 If-None-Match 头
+3. ✅ **CDN 友好** - 标准 HTTP 机制，CDN 和代理服务器天然支持
+4. ✅ **无状态** - 服务器无需维护缓存状态，ETag 从响应体生成
 
 ---
 
