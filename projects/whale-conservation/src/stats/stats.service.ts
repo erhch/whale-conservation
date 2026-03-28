@@ -127,4 +127,72 @@ export class StatsService {
       sightingCount: parseInt(item.sightingCount, 10),
     }));
   }
+
+  /**
+   * 鲸鱼个体状态分布统计
+   */
+  async getWhaleStatusBreakdown() {
+    const result = await this.whaleRepository
+      .createQueryBuilder('whale')
+      .select('whale.lifeStatus', 'status')
+      .addSelect('COUNT(whale.id)', 'count')
+      .groupBy('whale.lifeStatus')
+      .getRawMany();
+
+    const breakdown = {
+      alive: 0,
+      deceased: 0,
+      missing: 0,
+    };
+
+    result.forEach((item) => {
+      if (item.status) {
+        breakdown[item.status as keyof typeof breakdown] = parseInt(item.count, 10);
+      }
+    });
+
+    const total = breakdown.alive + breakdown.deceased + breakdown.missing;
+
+    return {
+      total,
+      breakdown,
+      survivalRate: total > 0 ? Math.round((breakdown.alive / total) * 100) : 0,
+    };
+  }
+
+  /**
+   * 鲸鱼性别分布统计
+   */
+  async getWhaleSexDistribution() {
+    const result = await this.whaleRepository
+      .createQueryBuilder('whale')
+      .select('whale.sex', 'sex')
+      .addSelect('COUNT(whale.id)', 'count')
+      .groupBy('whale.sex')
+      .getRawMany();
+
+    const distribution = {
+      male: 0,
+      female: 0,
+      unknown: 0,
+    };
+
+    result.forEach((item) => {
+      if (item.sex === 'M') {
+        distribution.male = parseInt(item.count, 10);
+      } else if (item.sex === 'F') {
+        distribution.female = parseInt(item.count, 10);
+      } else {
+        distribution.unknown = parseInt(item.count, 10);
+      }
+    });
+
+    const total = distribution.male + distribution.female + distribution.unknown;
+
+    return {
+      total,
+      distribution,
+      sexRatio: distribution.female > 0 ? (distribution.male / distribution.female).toFixed(2) : 'N/A',
+    };
+  }
 }

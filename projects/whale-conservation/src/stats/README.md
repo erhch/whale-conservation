@@ -146,6 +146,78 @@ GET /api/v1/stats/sightings/trend?days=7
 
 获取各监测站点的观测记录统计（按观测数量降序排列）。
 
+---
+
+### 5. 鲸鱼生命状态分布
+
+**GET** `/api/v1/stats/whales/status`
+
+获取鲸鱼个体按生命状态的分布统计（存活/死亡/失踪）。
+
+**响应示例:**
+
+```json
+{
+  "total": 45,
+  "breakdown": {
+    "alive": 38,
+    "deceased": 5,
+    "missing": 2
+  },
+  "survivalRate": 84
+}
+```
+
+**字段说明:**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `total` | `number` | 鲸鱼个体总数 |
+| `breakdown.alive` | `number` | 存活数量 |
+| `breakdown.deceased` | `number` | 死亡数量 |
+| `breakdown.missing` | `number` | 失踪数量 |
+| `survivalRate` | `number` | 存活率百分比 |
+
+---
+
+### 6. 鲸鱼性别分布
+
+**GET** `/api/v1/stats/whales/sex`
+
+获取鲸鱼个体按性别的分布统计。
+
+**响应示例:**
+
+```json
+{
+  "total": 45,
+  "distribution": {
+    "male": 20,
+    "female": 22,
+    "unknown": 3
+  },
+  "sexRatio": "0.91"
+}
+```
+
+**字段说明:**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `total` | `number` | 鲸鱼个体总数 |
+| `distribution.male` | `number` | 雄性数量 |
+| `distribution.female` | `number` | 雌性数量 |
+| `distribution.unknown` | `number` | 未知性别数量 |
+| `sexRatio` | `string` | 性别比 (雄/雌) |
+
+---
+
+### 7. 监测站点统计
+
+**GET** `/api/v1/stats/stations`
+
+获取各监测站点的观测记录统计（按观测数量降序排列）。
+
 **响应示例:**
 
 ```json
@@ -250,6 +322,8 @@ curl -X GET "http://localhost:3000/api/v1/stats/sightings/trend?days=7"
 ## 待扩展功能
 
 - [x] 按监测站点统计
+- [x] 鲸鱼生命状态分布
+- [x] 鲸鱼性别分布
 - [ ] 按月份/季度/年度统计
 - [ ] 鲸鱼个体活跃度分析
 - [ ] 热门观测地点排行
@@ -257,4 +331,4 @@ curl -X GET "http://localhost:3000/api/v1/stats/sightings/trend?days=7"
 
 ---
 
-*最后更新：2026-03-28 (新增：监测站点统计 API)*
+*最后更新：2026-03-29 (新增：鲸鱼状态分布和性别分布 API)*

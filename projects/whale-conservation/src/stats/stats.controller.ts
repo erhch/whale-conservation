@@ -46,4 +46,16 @@ export class StatsController {
   async getStationStats() {
     return this.statsService.getStationStats();
   }
+
+  @Get('whales/status')
+  @ApiOperation({ summary: '获取鲸鱼个体生命状态分布' })
+  async getWhaleStatusBreakdown() {
+    return this.statsService.getWhaleStatusBreakdown();
+  }
+
+  @Get('whales/sex')
+  @ApiOperation({ summary: '获取鲸鱼个体性别分布' })
+  async getWhaleSexDistribution() {
+    return this.statsService.getWhaleSexDistribution();
+  }
 }
