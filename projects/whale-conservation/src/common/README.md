@@ -2086,54 +2086,329 @@ async createOrganization(@Body() dto: CreateOrganizationDto) {
 
 - (无)
 
-**@Public() 使用示例:**
+---
+
+### 📁 Decorators (装饰器) - 详细用法
+
+#### @Public() - 公开路由装饰器
+
+标记路由为公开访问，跳过 JWT 认证。通常用于登录、注册、公开数据查询等接口。
 
 ```typescript
-// 公开路由 - 无需登录即可访问
+import { Public } from '@/common/decorators';
+
+// 登录接口 - 无需认证
 @Public()
 @Post('login')
 login(@Body() dto: LoginDto) {
   return this.authService.login(dto);
 }
 
+// 注册接口 - 无需认证
+@Public()
+@Post('register')
+register(@Body() dto: RegisterDto) {
+  return this.authService.register(dto);
+}
+
+// 公开数据查询 - 无需认证
 @Public()
 @Get('species')
 findAllSpecies() {
   return this.speciesService.findAll();
 }
+
+// 健康检查 - 无需认证
+@Public()
+@Get('health')
+healthCheck() {
+  return this.healthService.check();
+}
 ```
 
-**装饰器使用示例:**
+**使用场景:**
+
+| 场景 | 示例 | 说明 |
+|------|------|------|
+| 认证接口 | `POST /login`, `POST /register` | 用户登录注册，无需先认证 |
+| 公开数据 | `GET /species`, `GET /stations` | 公开数据查询，允许匿名访问 |
+| 健康检查 | `GET /health`, `GET /ping` | 监控和负载均衡器健康检查 |
+| 静态资源 | `GET /public/*` | 公开的文件或资源 |
+
+**注意事项:**
+
+1. ⚠️ **配合 JwtAuthGuard 使用** - `@Public()` 需要与 `JwtAuthGuard` 配合才能生效
+2. ⚠️ **全局守卫** - 确保 `JwtAuthGuard` 已注册为全局守卫 (`app.useGlobalGuards()`)
+3. ✅ **元数据标记** - 使用 `SetMetadata` 标记路由，守卫中通过 `Reflector` 读取
+4. ✅ **最小权限** - 仅对确实需要公开的接口使用，避免意外暴露敏感数据
+
+---
+
+#### @Roles() - 角色权限装饰器
+
+标记路由需要的角色权限，配合 `RolesGuard` 使用，实现 RBAC 权限控制。
 
 ```typescript
-// 角色权限控制
+import { Roles } from '@/common/decorators';
+import { UserRole } from '@/auth/entities/user.entity';
+
+// 仅管理员可访问
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.RESEARCHER)
-@Delete(':id')
-remove(@Param('id') id: string) {
-  return this.speciesService.remove(id);
+@Roles(UserRole.ADMIN)
+@Delete('users/:id')
+removeUser(@Param('id') id: string) {
+  return this.usersService.remove(id);
 }
 
-// 获取当前用户信息
+// 管理员或研究员可访问
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.ADMIN, UserRole.RESEARCHER)
+@Post('sightings')
+createSighting(@Body() dto: CreateSightingDto) {
+  return this.sightingsService.create(dto);
+}
+
+// 所有已认证用户可访问 (包括志愿者)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.ADMIN, UserRole.RESEARCHER, UserRole.VOLUNTEER)
+@Get('my-sightings')
+findMySightings(@CurrentUser() user: User) {
+  return this.sightingsService.findByUser(user.id);
+}
+```
+
+**角色定义 (UserRole):**
+
+```typescript
+enum UserRole {
+  ADMIN = 'admin',           // 系统管理员
+  RESEARCHER = 'researcher', // 研究员
+  VOLUNTEER = 'volunteer',   // 志愿者
+  PUBLIC = 'public',         // 公众用户 (仅公开数据)
+}
+```
+
+**角色权限矩阵:**
+
+| 角色 | 数据查看 | 数据录入 | 数据编辑 | 数据删除 | 用户管理 | 系统配置 |
+|------|---------|---------|---------|---------|---------|---------|
+| `ADMIN` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `RESEARCHER` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| `VOLUNTEER` | ✅ | ✅ (有限) | ❌ | ❌ | ❌ | ❌ |
+| `PUBLIC` | ✅ (公开) | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+**使用场景:**
+
+| 场景 | 推荐角色 | 示例 |
+|------|---------|------|
+| 用户管理 | `ADMIN` | 创建/删除用户、重置密码 |
+| 数据录入 | `RESEARCHER`, `VOLUNTEER` | 提交观测记录、照片 |
+| 数据审核 | `RESEARCHER`, `ADMIN` | 审核志愿者提交的数据 |
+| 系统配置 | `ADMIN` | 修改监测站点、物种分类 |
+| 数据导出 | `RESEARCHER`, `ADMIN` | 导出研究数据 |
+| 公开查询 | `PUBLIC` (或 `@Public()`) | 物种列表、观测地图 |
+
+**注意事项:**
+
+1. ⚠️ **守卫顺序** - `RolesGuard` 必须在 `JwtAuthGuard` 之后执行 (先认证，再授权)
+2. ⚠️ **多角色支持** - `@Roles()` 可接受多个角色，用户拥有任一角色即可访问
+3. ✅ **配合 CurrentUser** - 通常在控制器中同时使用 `@CurrentUser()` 获取用户信息
+4. ✅ **细粒度控制** - 对于更细粒度的权限控制，可考虑基于资源/所有权的权限检查
+
+---
+
+#### @CurrentUser() - 当前用户装饰器
+
+从请求中提取已认证的用户信息，需要在控制器中配合 `JwtAuthGuard` 使用。
+
+```typescript
+import { CurrentUser } from '@/common/decorators';
+import { User } from '@/auth/entities/user.entity';
+
+// 获取当前用户资料
 @UseGuards(JwtAuthGuard)
 @Get('profile')
 getProfile(@CurrentUser() user: User) {
   return {
+    id: user.id,
     username: user.username,
-    role: user.role,
     nickname: user.nickname,
+    email: user.email,
+    role: user.role,
+    createdAt: user.createdAt,
   };
+}
+
+// 更新当前用户资料
+@UseGuards(JwtAuthGuard)
+@Patch('profile')
+updateProfile(
+  @CurrentUser() user: User,
+  @Body() updateDto: UpdateProfileDto,
+) {
+  return this.usersService.update(user.id, updateDto);
+}
+
+// 获取当前用户的观测记录
+@UseGuards(JwtAuthGuard)
+@Get('my-sightings')
+findMySightings(
+  @CurrentUser() user: User,
+  @Query(new PaginationPipe()) pagination: PaginationResult,
+) {
+  return this.sightingsService.findByUser(user.id, pagination);
+}
+
+// 创建资源时自动关联当前用户
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.RESEARCHER, UserRole.ADMIN)
+@Post('sightings')
+createSighting(
+  @CurrentUser() user: User,
+  @Body() dto: CreateSightingDto,
+) {
+  // 自动设置创建者
+  return this.sightingsService.create({
+    ...dto,
+    createdBy: user.id,
+  });
 }
 ```
 
-**角色权限说明:**
+**User 实体结构:**
 
-| 角色 | 说明 | 权限范围 |
-|------|------|----------|
-| `ADMIN` | 系统管理员 | 全部权限 |
-| `RESEARCHER` | 研究员 | 数据录入、编辑、分析 |
-| `VOLUNTEER` | 志愿者 | 数据查看、有限录入 |
-| `PUBLIC` | 公众用户 | 仅公开数据查看 |
+```typescript
+interface User {
+  id: string;              // UUID
+  username: string;        // 用户名 (唯一)
+  email: string;           // 邮箱 (唯一)
+  nickname?: string;       // 昵称 (可选)
+  role: UserRole;          // 角色
+  isActive: boolean;       // 是否激活
+  createdAt: Date;         // 创建时间
+  updatedAt: Date;         // 更新时间
+}
+```
+
+**使用场景:**
+
+| 场景 | 示例 | 说明 |
+|------|------|------|
+| 个人资料 | `GET /profile` | 获取当前用户信息 |
+| 更新资料 | `PATCH /profile` | 更新当前用户信息 |
+| 个人数据 | `GET /my-sightings` | 获取当前用户创建的数据 |
+| 审计日志 | 创建/更新资源 | 自动记录操作者 |
+| 权限检查 | 资源访问 | 检查是否为资源所有者 |
+
+**注意事项:**
+
+1. ⚠️ **需要认证** - 必须在已认证的路由中使用 (配合 `JwtAuthGuard`)
+2. ⚠️ **类型安全** - 返回的 `User` 类型应包含必要的用户信息字段
+3. ✅ **自动注入** - 无需手动从 request 中提取，装饰器自动处理
+4. ✅ **可选字段提取** - 可传递参数提取特定字段：`@CurrentUser('username')`
+
+---
+
+#### 装饰器组合使用示例
+
+**完整的 CRUD 控制器示例:**
+
+```typescript
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
+import { Public, Roles, CurrentUser } from '@/common/decorators';
+import { JwtAuthGuard, RolesGuard } from '@/common/guards';
+import { ParseUUIDPipe, PaginationPipe } from '@/common/pipes';
+import { UserRole } from '@/auth/entities/user.entity';
+import { User } from '@/auth/entities/user.entity';
+
+@Controller('whales')
+export class WhalesController {
+  constructor(private readonly whalesService: WhalesService) {}
+
+  // 公开查询 - 无需认证
+  @Public()
+  @Get()
+  findAll(
+    @Query(new PaginationPipe()) pagination: PaginationResult,
+    @Query('speciesId', new ParseOptionalIntPipe()) speciesId?: number,
+  ) {
+    return this.whalesService.findAll(pagination, { speciesId });
+  }
+
+  // 查看详情 - 无需认证
+  @Public()
+  @Get(':id')
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.whalesService.findOne(id);
+  }
+
+  // 创建鲸鱼个体 - 需要研究员或管理员权限
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.RESEARCHER, UserRole.ADMIN)
+  @Post()
+  create(
+    @CurrentUser() user: User,
+    @Body() dto: CreateWhaleDto,
+  ) {
+    return this.whalesService.create(dto, user);
+  }
+
+  // 更新鲸鱼个体 - 需要研究员或管理员权限
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.RESEARCHER, UserRole.ADMIN)
+  @Patch(':id')
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateWhaleDto,
+  ) {
+    return this.whalesService.update(id, dto);
+  }
+
+  // 删除鲸鱼个体 - 仅管理员
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Delete(':id')
+  remove(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.whalesService.remove(id);
+  }
+}
+```
+
+**守卫和装饰器注册 (main.ts):**
+
+```typescript
+import { JwtAuthGuard, RolesGuard } from '@/common/guards';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  
+  // 全局守卫 - 所有路由默认需要 JWT 认证
+  app.useGlobalGuards(new JwtAuthGuard(), new RolesGuard());
+  
+  // 其他全局配置...
+  
+  await app.listen(3000);
+}
+```
+
+---
+
+**装饰器速查表:**
+
+| 装饰器 | 用途 | 配合 | 典型场景 |
+|--------|------|------|---------|
+| `@Public()` | 跳过认证 | `JwtAuthGuard` | 登录/注册/公开数据 |
+| `@Roles(...)` | 角色限制 | `RolesGuard` | 权限控制 |
+| `@CurrentUser()` | 获取用户 | `JwtAuthGuard` | 个人资料/审计日志 |
 
 ---
 
