@@ -123,4 +123,11 @@ export class SightingsController {
     const csv = await this.sightingsService.exportToCSV({ startDate, endDate, whaleId, stationId, limit });
     return csv;
   }
+
+  @Get('search')
+  @ApiOperation({ summary: '搜索观测记录 (支持地点/行为/备注模糊搜索)' })
+  @ApiQuery({ name: 'q', required: true, type: String, description: '搜索关键词', example: '觅食' })
+  async search(@Query('q') query: string): Promise<Sighting[]> {
+    return this.sightingsService.search(query);
+  }
 }

@@ -367,6 +367,116 @@ curl -X DELETE "http://localhost:3000/api/v1/sightings/550e8400-e29b-41d4-a716-4
 
 ---
 
+### 6.5. 搜索观测记录 (新增)
+
+```http
+GET /api/v1/sightings/search
+```
+
+**查询参数:**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `q` | string | ✅ | 搜索关键词 |
+
+**搜索规则:**
+
+| 规则 | 说明 |
+|------|------|
+| 模糊匹配 | 使用 LIKE 查询，支持部分匹配 |
+| 搜索字段 | `locationName` (地点名称)、`behavior` (行为)、`notes` (备注) |
+| 大小写 | 不区分大小写 (PostgreSQL LIKE 默认行为) |
+| 空查询 | 返回空数组 `[]` |
+| 排序 | 按观测时间倒序 (最新观测优先) |
+| 关联数据 | 自动包含鲸鱼、站点、观测者信息 |
+
+**响应示例:**
+
+```json
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "whale": {
+      "id": "whale-001",
+      "identifier": "BCX001",
+      "name": "大白",
+      "species": {
+        "commonNameZh": "座头鲸"
+      }
+    },
+    "station": {
+      "id": "station-001",
+      "name": "东海监测站"
+    },
+    "observer": {
+      "id": "user-001",
+      "name": "研究员 A"
+    },
+    "observedAt": "2026-03-28T14:30:00Z",
+    "latitude": 31.2304,
+    "longitude": 121.4737,
+    "locationName": "东海海域",
+    "behavior": "觅食",
+    "groupSize": 3,
+    "notes": "观察到母子互动，幼鲸在母鲸附近活动",
+    "weather": "晴",
+    "seaState": 2,
+    "isVerified": true,
+    "photoUrls": ["https://example.com/photo1.jpg"],
+    "createdAt": "2026-03-28T15:00:00Z",
+    "updatedAt": "2026-03-28T15:00:00Z"
+  }
+]
+```
+
+**cURL 示例:**
+
+```bash
+# 搜索地点包含"东海"的观测记录
+curl -X GET "http://localhost:3000/api/v1/sightings/search?q=东海"
+
+# 搜索行为包含"觅食"的观测记录
+curl -X GET "http://localhost:3000/api/v1/sightings/search?q=觅食"
+
+# 搜索备注包含"母子"的观测记录
+curl -X GET "http://localhost:3000/api/v1/sightings/search?q=母子"
+
+# 空查询返回空数组
+curl -X GET "http://localhost:3000/api/v1/sightings/search?q="
+```
+
+**JavaScript 示例:**
+
+```javascript
+// Fetch API
+async function searchSightings(query) {
+  if (!query || query.trim().length === 0) {
+    return [];
+  }
+  
+  const response = await fetch(`http://localhost:3000/api/v1/sightings/search?q=${encodeURIComponent(query)}`);
+  return response.json();
+}
+
+// 使用示例
+const results = await searchSightings('觅食');
+console.log(`找到 ${results.length} 条匹配记录`);
+results.forEach(sighting => {
+  console.log(`${sighting.observedAt} - ${sighting.locationName}: ${sighting.behavior}`);
+});
+```
+
+**使用场景:**
+
+| 场景 | 示例查询 | 说明 |
+|------|----------|------|
+| 地点搜索 | `q=东海` | 查找在东海海域的观测记录 |
+| 行为搜索 | `q=觅食` | 查找特定行为的观测记录 |
+| 备注搜索 | `q=母子` | 查找备注中包含关键词的记录 |
+| 模糊匹配 | `q=跃出` | 匹配"跃出水面"、"跃出"等 |
+
+---
+
 ### 7. 导出观测记录为 CSV (新增)
 
 ```http
@@ -746,10 +856,11 @@ async create(createSightingDto: CreateSightingDto) {
 - [ ] 照片上传接口集成
 - [ ] 地理位置验证 (海洋区域检查)
 - [x] 观测数据导出 (CSV/GeoJSON) - ✅ 已实现 `/export/csv` 端点
+- [x] 观测记录搜索 API - ✅ 已实现 `/search` 端点 (按地点/行为/备注搜索)
 - [ ] 迁徙轨迹分析 API
 - [x] 观测热度统计 (按时间/地点) - ✅ 已实现 `/stats/overview` 端点
 
 ---
 
-**最后更新:** 2026-03-29  
+**最后更新:** 2026-03-29 (新增：搜索 API)  
 **维护者:** 鲸创项目开发团队

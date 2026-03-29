@@ -173,6 +173,31 @@ export class SightingsService {
   }
 
   /**
+   * 搜索观测记录 (按地点/行为/备注模糊搜索)
+   * @param query 搜索关键词
+   * @returns 观测记录列表
+   */
+  async search(query: string): Promise<Sighting[]> {
+    if (!query || query.trim().length === 0) {
+      return [];
+    }
+
+    const searchTerm = `%${query.trim()}%`;
+
+    return this.sightingRepository
+      .createQueryBuilder('sighting')
+      .leftJoinAndSelect('sighting.whale', 'whale')
+      .leftJoinAndSelect('sighting.station', 'station')
+      .leftJoinAndSelect('sighting.observer', 'observer')
+      .where(
+        '(sighting.locationName LIKE :term OR sighting.behavior LIKE :term OR sighting.notes LIKE :term)',
+        { term: searchTerm },
+      )
+      .orderBy('sighting.observedAt', 'DESC')
+      .getMany();
+  }
+
+  /**
    * 导出观测记录为 CSV 格式
    * @param options 导出选项
    * @returns CSV 字符串
