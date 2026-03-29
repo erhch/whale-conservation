@@ -524,4 +524,152 @@ const sighting = await api.post('/sightings', sightingData);
 
 ---
 
-*最后更新：2026-03-28*
+## 高级统计 API 示例
+
+### 种群增长趋势预测
+
+```bash
+# 获取过去 12 个月的种群增长趋势，并预测未来 3 个月
+curl -X GET "http://localhost:3000/api/v1/stats/population/growth-trend?months=12&forecastMonths=3" \
+  -H "Authorization: Bearer $JWT_TOKEN"
+```
+
+**响应示例:**
+```json
+{
+  "period": {
+    "startDate": "2025-03-29T00:00:00.000Z",
+    "endDate": "2026-03-29T00:00:00.000Z",
+    "months": 12
+  },
+  "history": [
+    {
+      "month": "2025-04-01T00:00:00.000Z",
+      "newWhales": 3,
+      "cumulative": 3
+    }
+  ],
+  "predictions": [
+    {
+      "month": "2026-04-01T00:00:00.000Z",
+      "predictedCumulative": 48,
+      "isForecast": true
+    }
+  ],
+  "analytics": {
+    "totalNewWhales": 45,
+    "avgMonthlyNewWhales": 3.8,
+    "avgGrowthRate": 12.5,
+    "trend": "growing"
+  }
+}
+```
+
+---
+
+### 鲸鱼迁徙轨迹分析
+
+```bash
+# 获取指定鲸鱼过去 180 天的迁徙轨迹
+curl -X GET "http://localhost:3000/api/v1/stats/whales/wh-001/migration?days=180" \
+  -H "Authorization: Bearer $JWT_TOKEN"
+```
+
+**响应示例:**
+```json
+{
+  "whale": {
+    "id": "wh-001",
+    "identifier": "BCX001",
+    "name": "大白",
+    "species": "座头鲸",
+    "lifeStatus": "alive"
+  },
+  "period": {
+    "startDate": "2025-09-29T00:00:00.000Z",
+    "endDate": "2026-03-29T00:00:00.000Z",
+    "days": 180
+  },
+  "summary": {
+    "totalSightings": 12,
+    "uniqueLocations": 5,
+    "firstSighting": {
+      "date": "2025-10-05T08:30:00.000Z",
+      "location": "南海海域"
+    },
+    "lastSighting": {
+      "date": "2026-03-28T14:30:00.000Z",
+      "location": "东海监测站"
+    },
+    "estimatedTotalDistanceKm": 2847.5
+  },
+  "trajectory": [
+    {
+      "sequence": 1,
+      "observedAt": "2025-10-05T08:30:00.000Z",
+      "location": "南海海域",
+      "coordinates": {
+        "lat": 18.2567,
+        "lng": 109.5123
+      },
+      "behavior": "feeding",
+      "groupSize": 2
+    }
+  ]
+}
+```
+
+---
+
+### 观测行为分布统计
+
+```bash
+# 获取各种观测行为的分布统计
+curl -X GET http://localhost:3000/api/v1/stats/sightings/behaviors \
+  -H "Authorization: Bearer $JWT_TOKEN"
+```
+
+**响应示例:**
+```json
+[
+  {
+    "behavior": "feeding",
+    "count": 95,
+    "percentage": 40
+  },
+  {
+    "behavior": "breaching",
+    "count": 57,
+    "percentage": 24
+  },
+  {
+    "behavior": "socializing",
+    "count": 48,
+    "percentage": 20
+  }
+]
+```
+
+---
+
+### 活跃鲸鱼个体排行
+
+```bash
+# 获取最近 30 天内最活跃的 10 只鲸鱼
+curl -X GET "http://localhost:3000/api/v1/stats/whales/active?limit=10&days=30" \
+  -H "Authorization: Bearer $JWT_TOKEN"
+```
+
+---
+
+### 指定物种详细统计
+
+```bash
+# 获取指定物种的综合统计数据
+curl -X GET http://localhost:3000/api/v1/stats/species/sp-001 \
+  -H "Authorization: Bearer $JWT_TOKEN"
+```
+
+---
+
+*最后更新：2026-03-29 (新增：高级统计 API 示例)*
