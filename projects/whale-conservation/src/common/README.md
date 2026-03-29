@@ -512,6 +512,9 @@ getStatistics() {
 - `ParseEmailPipe` - 邮箱格式验证管道 (支持必填/可选模式、自动转小写)
 - `ParsePhonePipe` - 手机号格式验证管道 (支持中国大陆手机号、国际格式选项)
 - `ParseDatePipe` - 必填日期解析管道 (YYYY-MM-DD 格式，支持日期范围验证)
+- `ParseUrlPipe` - URL 格式验证管道 (支持协议验证、必填/可选模式)
+- `ParseCoordinatePipe` - GPS 坐标解析管道 (纬度/经度范围验证)
+- `ParseCoordinatePairPipe` - 坐标对解析管道 (同时验证纬度和经度)
 
 **使用示例:**
 
@@ -1396,6 +1399,140 @@ findNearbySightings(
 | `ParseFloatPipe` | 必填 | 抛出异常 | 必须提供的浮点数参数 (如坐标) |
 | `ParseOptionalFloatPipe` | 可选 | 返回 `undefined` 或默认值 | 可选的筛选条件 (如最小/最大过滤值) |
 
+### 📁 Pipes (管道) - ParseCoordinatePipe
+
+**ParseCoordinatePipe 使用示例:**
+
+```typescript
+import { ParseCoordinatePipe, ParseCoordinatePairPipe } from '@/common/pipes';
+
+// 单独验证纬度 - 基础用法
+@Query('lat', new ParseCoordinatePipe({ type: 'latitude' }))
+latitude: number;
+
+// 单独验证经度 - 基础用法
+@Query('lng', new ParseCoordinatePipe({ type: 'longitude' }))
+longitude: number;
+
+// 可选坐标参数 - 允许 undefined
+@Query('centerLat', new ParseCoordinatePipe({ type: 'latitude', allowOptional: true }))
+centerLatitude?: number;
+
+@Query('centerLng', new ParseCoordinatePipe({ type: 'longitude', allowOptional: true }))
+centerLongitude?: number;
+
+// 使用坐标对管道 - 同时验证纬度和经度
+@Query(new ParseCoordinatePairPipe())
+center: { latitude: number; longitude: number };
+
+// 在 Controller 中组合使用
+@Get('sightings/nearby')
+findNearbySightings(
+  @Query('lat', new ParseCoordinatePipe({ type: 'latitude' })) latitude: number,
+  @Query('lng', new ParseCoordinatePipe({ type: 'longitude' })) longitude: number,
+  @Query('radius', new ParseOptionalFloatPipe({ defaultValue: 10, min: 0.1, max: 100 })) radius: number,
+) {
+  return this.sightingsService.findNearby(latitude, longitude, radius);
+}
+
+// 使用坐标对 - 更简洁的写法
+@Get('stations/nearby')
+findNearbyStations(
+  @Query(new ParseCoordinatePairPipe()) center: { latitude: number; longitude: number },
+  @Query('radius', new ParseOptionalFloatPipe({ defaultValue: 50 })) radius: number,
+) {
+  return this.stationsService.findNearby(center.latitude, center.longitude, radius);
+}
+```
+
+**ParseCoordinateOptions 选项:**
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `type` | `'latitude' \| 'longitude'` | 必填 | 坐标类型，决定验证范围 |
+| `allowOptional` | `boolean` | `false` | 是否允许为空，`true` 时允许 `undefined` |
+
+**验证规则:**
+
+| 坐标类型 | 范围 | 说明 |
+|---------|------|------|
+| 纬度 (latitude) | -90 到 90 | 地球纬度范围 |
+| 经度 (longitude) | -180 到 180 | 地球经度范围 |
+
+**错误响应示例:**
+
+```json
+// 缺少必填坐标参数
+{
+  "statusCode": 400,
+  "message": "lat 是必填项，请提供有效的坐标值",
+  "error": "Bad Request"
+}
+
+// 纬度超出范围
+{
+  "statusCode": 400,
+  "message": "lat 必须在 -90 到 90 之间",
+  "error": "Bad Request"
+}
+
+// 经度超出范围
+{
+  "statusCode": 400,
+  "message": "lng 必须在 -180 到 180 之间",
+  "error": "Bad Request"
+}
+
+// 坐标对验证失败
+{
+  "statusCode": 400,
+  "message": "latitude 必须在 -90 到 90 之间",
+  "error": "Bad Request"
+}
+```
+
+**使用场景:**
+
+| 场景 | 示例 | 说明 |
+|------|------|------|
+| 观测位置 | `?lat=31.2304&lng=121.4737` | 鲸鱼观测记录的 GPS 坐标 |
+| 搜索中心点 | `?centerLat=35.6762&centerLng=139.6503` | 附近搜索的中心坐标 |
+| 迁徙轨迹点 | `POST /whales/:id/migrations` | 鲸鱼迁徙轨迹的坐标点 |
+| 监测站点位置 | `POST /stations` | 监测站点的地理位置 |
+| 栖息地边界 | `POST /habitats` | 栖息地保护区的边界坐标 |
+
+**坐标对示例 (日本东京):**
+
+| 格式 | 值 | 说明 |
+|------|-----|------|
+| 纬度 | `35.6762` | 北纬 35.6762 度 |
+| 经度 | `139.6503` | 东经 139.6503 度 |
+| 坐标对 | `{ latitude: 35.6762, longitude: 139.6503 }` | 完整坐标对象 |
+
+**常见坐标范围参考:**
+
+| 地区 | 纬度范围 | 经度范围 |
+|------|---------|---------|
+| 中国 | 18°N - 54°N | 73°E - 135°E |
+| 日本 | 24°N - 46°N | 123°E - 146°E |
+| 美国西海岸 | 32°N - 49°N | 117°W - 125°W |
+| 南极洲 | 60°S - 90°S | 全经度 |
+| 北极地区 | 66.5°N - 90°N | 全经度 |
+
+**ParseCoordinatePipe vs ParseFloatPipe:**
+
+| 管道 | 验证范围 | 语义 | 使用场景 |
+|------|---------|------|---------|
+| `ParseCoordinatePipe` | 纬度：-90~90, 经度：-180~180 | GPS 坐标专用 | 地理位置、迁徙轨迹、监测站点 |
+| `ParseFloatPipe` | 自定义范围 | 通用浮点数 | 温度、盐度、距离、百分比 |
+
+**最佳实践:**
+
+1. ✅ **优先使用 ParseCoordinatePipe** - 代码语义更清晰，自动范围验证
+2. ✅ **使用坐标对管道** - 当需要同时验证纬度和经度时更简洁
+3. ✅ **设置 allowOptional** - 对于可选的坐标筛选参数
+4. ⚠️ **注意坐标顺序** - 始终使用 (latitude, longitude) 顺序，不要混淆
+
 待实现:
 
 - 自定义业务验证管道 (根据业务需求扩展)
@@ -1483,6 +1620,9 @@ getProfile(@CurrentUser() user: User) {
 | `ParseBooleanPipe` | 必填布尔值 | 状态开关/是否筛选 (true/false/1/0/yes/no) |
 | `ParseEmailPipe` | 邮箱验证 | 用户注册/联系方式/通知邮箱 |
 | `ParsePhonePipe` | 手机号验证 | 用户注册/研究员信息/紧急联系人 |
+| `ParseUrlPipe` | URL 验证 | 网站链接/资源 URL/回调地址 |
+| `ParseCoordinatePipe` | GPS 坐标验证 | 观测位置/迁徙轨迹/监测站点 |
+| `ParseCoordinatePairPipe` | 坐标对验证 | 中心点定位/范围搜索 |
 
 ### Interceptors (拦截器)
 
@@ -1550,4 +1690,4 @@ app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 
 ---
 
-*最后更新：2026-03-30 00:45*
+*最后更新：2026-03-30 04:45*
