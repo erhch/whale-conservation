@@ -477,6 +477,136 @@ results.forEach(sighting => {
 
 ---
 
+### 6.6. 获取最近观测记录 (新增)
+
+```http
+GET /api/v1/sightings/recent
+```
+
+**查询参数:**
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| `limit` | number | 否 | 10 | 返回数量 (1-100) |
+| `offset` | number | 否 | 0 | 偏移量 (用于分页) |
+
+**响应格式:**
+
+```json
+{
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "observedAt": "2026-03-29T14:30:00.000Z",
+      "location": "东海海域",
+      "behavior": "觅食",
+      "groupSize": 3,
+      "whale": {
+        "id": "whale-001",
+        "identifier": "BCX001",
+        "name": "大白",
+        "species": "座头鲸",
+        "scientificName": "Megaptera novaeangliae"
+      },
+      "station": {
+        "code": "ST001",
+        "name": "东海监测站"
+      }
+    }
+  ],
+  "pagination": {
+    "limit": 10,
+    "offset": 0,
+    "total": 238,
+    "hasMore": true
+  }
+}
+```
+
+**响应字段说明:**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `data` | Array | 观测记录列表 |
+| `data[].id` | UUID | 观测记录 ID |
+| `data[].observedAt` | Date | 观测时间 (ISO 8601) |
+| `data[].location` | string | 观测地点名称 |
+| `data[].behavior` | string | 鲸鱼行为描述 |
+| `data[].groupSize` | number | 群体数量 |
+| `data[].whale` | Object | 鲸鱼信息 (包含编号、昵称、物种) |
+| `data[].station` | Object | 监测站点信息 (包含代码、名称) |
+| `pagination` | Object | 分页元数据 |
+| `pagination.limit` | number | 每页数量 |
+| `pagination.offset` | number | 当前偏移量 |
+| `pagination.total` | number | 总记录数 |
+| `pagination.hasMore` | boolean | 是否还有更多数据 |
+
+**cURL 示例:**
+
+```bash
+# 获取最近 10 条观测记录
+curl -X GET "http://localhost:3000/api/v1/sightings/recent"
+
+# 获取最近 20 条观测记录
+curl -X GET "http://localhost:3000/api/v1/sightings/recent?limit=20"
+
+# 分页：获取第 2 页 (偏移 10 条)
+curl -X GET "http://localhost:3000/api/v1/sightings/recent?limit=10&offset=10"
+
+# 获取最近 50 条观测记录
+curl -X GET "http://localhost:3000/api/v1/sightings/recent?limit=50"
+```
+
+**JavaScript 示例:**
+
+```javascript
+// Fetch API
+async function getRecentSightings(limit = 10, offset = 0) {
+  const response = await fetch(
+    `http://localhost:3000/api/v1/sightings/recent?limit=${limit}&offset=${offset}`
+  );
+  return response.json();
+}
+
+// 使用示例
+async function displayRecentSightings() {
+  const result = await getRecentSightings(10, 0);
+  
+  console.log(`共 ${result.pagination.total} 条记录`);
+  
+  result.data.forEach(sighting => {
+    const whaleName = sighting.whale?.name || sighting.whale?.identifier || '未知';
+    const stationName = sighting.station?.name || '未知站点';
+    console.log(
+      `${sighting.observedAt} - ${whaleName} 在 ${sighting.location} (${stationName}): ${sighting.behavior}`
+    );
+  });
+  
+  if (result.pagination.hasMore) {
+    console.log('还有更多数据，使用 offset=10 获取下一页');
+  }
+}
+
+displayRecentSightings();
+```
+
+**使用场景:**
+
+| 场景 | 说明 |
+|------|------|
+| 📱 **实时动态** | 首页展示最新观测活动 |
+| 🔔 **推送通知** | 新观测记录提醒 |
+| 📋 **数据审核** | 查看最新录入的观测数据 |
+| 🗺️ **地图标记** | 在地图上显示最近观测点 |
+
+**性能优化:**
+
+- ✅ **缓存**: 启用 5 分钟缓存，减少数据库查询
+- ✅ **分页**: 支持 offset 分页，避免一次性加载大量数据
+- ✅ **限制**: 最大返回 100 条，防止过度查询
+
+---
+
 ### 7. 导出观测记录为 CSV (新增)
 
 ```http
@@ -857,10 +987,11 @@ async create(createSightingDto: CreateSightingDto) {
 - [ ] 地理位置验证 (海洋区域检查)
 - [x] 观测数据导出 (CSV/GeoJSON) - ✅ 已实现 `/export/csv` 端点
 - [x] 观测记录搜索 API - ✅ 已实现 `/search` 端点 (按地点/行为/备注搜索)
+- [x] 最近观测记录 API - ✅ 已实现 `/recent` 端点 (支持分页)
 - [ ] 迁徙轨迹分析 API
 - [x] 观测热度统计 (按时间/地点) - ✅ 已实现 `/stats/overview` 端点
 
 ---
 
-**最后更新:** 2026-03-29 (新增：搜索 API)  
+**最后更新:** 2026-03-29 (新增：搜索 API、最近观测记录 API)  
 **维护者:** 鲸创项目开发团队

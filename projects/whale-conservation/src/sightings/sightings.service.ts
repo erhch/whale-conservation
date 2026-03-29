@@ -198,6 +198,97 @@ export class SightingsService {
   }
 
   /**
+   * 获取最近观测记录
+   * @param limit 返回数量 (默认 10，最大 100)
+   * @param offset 偏移量 (默认 0)
+   * @returns 最近观测记录列表 (含分页元数据)
+   */
+  async getRecent(limit: number = 10, offset: number = 0): Promise<{
+    data: Array<{
+      id: string;
+      observedAt: Date;
+      location: string;
+      behavior: string | null;
+      groupSize: number | null;
+      whale: {
+        id: string;
+        identifier: string;
+        name: string | null;
+        species: string | null;
+        scientificName: string | null;
+      } | null;
+      station: {
+        code: string;
+        name: string;
+      } | null;
+    }>;
+    pagination: {
+      limit: number;
+      offset: number;
+      total: number;
+      hasMore: boolean;
+    };
+  }> {
+    const safeLimit = Math.min(Math.max(limit, 1), 100);
+    const safeOffset = Math.max(offset, 0);
+
+    const [results, total] = await this.sightingRepository
+      .createQueryBuilder('sighting')
+      .select('sighting.id', 'id')
+      .addSelect('sighting.observedAt', 'observedAt')
+      .addSelect('sighting.locationName', 'location')
+      .addSelect('sighting.behavior', 'behavior')
+      .addSelect('sighting.groupSize', 'groupSize')
+      .addSelect('whale.id', 'whaleId')
+      .addSelect('whale.identifier', 'whaleIdentifier')
+      .addSelect('whale.name', 'whaleName')
+      .addSelect('species.commonNameZh', 'speciesName')
+      .addSelect('species.scientificName', 'scientificName')
+      .addSelect('station.code', 'stationCode')
+      .addSelect('station.name', 'stationName')
+      .innerJoin('sighting.whale', 'whale')
+      .innerJoin('whale.species', 'species')
+      .leftJoin('sighting.station', 'station')
+      .orderBy('sighting.observedAt', 'DESC')
+      .limit(safeLimit)
+      .offset(safeOffset)
+      .getManyAndCount();
+
+    const data = results.map((item: any) => ({
+      id: item.id,
+      observedAt: item.observedAt,
+      location: item.location,
+      behavior: item.behavior,
+      groupSize: item.groupSize ? parseInt(item.groupSize, 10) : null,
+      whale: item.whaleId
+        ? {
+            id: item.whaleId,
+            identifier: item.whaleIdentifier,
+            name: item.whaleName,
+            species: item.speciesName,
+            scientificName: item.scientificName,
+          }
+        : null,
+      station: item.stationCode
+        ? {
+            code: item.stationCode,
+            name: item.stationName,
+          }
+        : null,
+    }));
+
+    return {
+      data,
+      pagination: {
+        limit: safeLimit,
+        offset: safeOffset,
+        total,
+        hasMore: safeOffset + safeLimit < total,
+      },
+    };
+  }
+
+  /**
    * 导出观测记录为 CSV 格式
    * @param options 导出选项
    * @returns CSV 字符串

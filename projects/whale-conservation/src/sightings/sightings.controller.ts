@@ -130,4 +130,41 @@ export class SightingsController {
   async search(@Query('q') query: string): Promise<Sighting[]> {
     return this.sightingsService.search(query);
   }
+
+  @Get('recent')
+  @ApiOperation({ summary: '获取最近观测记录 (支持分页)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: '返回数量 (默认 10，最大 100)', example: 10 })
+  @ApiQuery({ name: 'offset', required: false, type: Number, description: '偏移量 (默认 0)', example: 0 })
+  @UseInterceptors(CacheInterceptor)
+  async getRecent(
+    @Query('limit', new ParseOptionalIntPipe({ defaultValue: 10, min: 1, max: 100 })) limit?: number,
+    @Query('offset', new ParseOptionalIntPipe({ defaultValue: 0, min: 0 })) offset?: number,
+  ): Promise<{
+    data: Array<{
+      id: string;
+      observedAt: Date;
+      location: string;
+      behavior: string | null;
+      groupSize: number | null;
+      whale: {
+        id: string;
+        identifier: string;
+        name: string | null;
+        species: string | null;
+        scientificName: string | null;
+      } | null;
+      station: {
+        code: string;
+        name: string;
+      } | null;
+    }>;
+    pagination: {
+      limit: number;
+      offset: number;
+      total: number;
+      hasMore: boolean;
+    };
+  }> {
+    return this.sightingsService.getRecent(limit, offset);
+  }
 }
