@@ -684,6 +684,7 @@ async function bootstrap() {
 
 - `ParseIntPipe` - 必填整数解析管道 (支持范围验证)
 - `ParseFloatPipe` - 必填浮点数解析管道 (支持范围验证、精度控制)
+- `ParseStringPipe` - 必填字符串解析管道 (支持修剪、长度验证、正则匹配、大小写转换)
 - `ParseOptionalIntPipe` - 可选整数解析管道 (支持默认值、范围验证)
 - `ParseOptionalFloatPipe` - 可选浮点数解析管道 (支持默认值、范围验证、精度控制)
 - `ParseOptionalBooleanPipe` - 可选布尔值解析管道 (支持多种格式)
@@ -1128,6 +1129,114 @@ findAll(
 |------|----------|----------|----------|
 | `ParseBooleanPipe` | 必填 | 抛出异常 | 必须明确指定的布尔开关 |
 | `ParseOptionalBooleanPipe` | 可选 | 返回 `undefined` 或默认值 | 可选的筛选条件 |
+
+### 📁 Pipes (管道) - ParseStringPipe
+
+**ParseStringPipe 使用示例:**
+
+```typescript
+import { ParseStringPipe } from '@/common/pipes';
+
+// 必填字符串 - 基础用法
+@Body('name', new ParseStringPipe())
+name: string;
+
+@Query('keyword', new ParseStringPipe())
+keyword: string;
+
+// 带长度验证 - 鲸鱼名称 2-50 字符
+@Body('name', new ParseStringPipe({ minLength: 2, maxLength: 50 }))
+name: string;
+
+// 带正则验证 - 国家代码 (2 位大写字母)
+@Body('countryCode', new ParseStringPipe({ 
+  pattern: /^[A-Z]{2}$/,
+  patternMessage: '国家代码必须是 2 位大写字母',
+  toUpperCase: true
+}))
+countryCode: string;
+
+// 自动修剪和转小写 - 邮箱/用户名
+@Body('username', new ParseStringPipe({ 
+  trim: true,
+  toLowerCase: true,
+  maxLength: 30
+}))
+username: string;
+
+// 在 Controller 中组合使用
+@Post('whales')
+createWhale(
+  @Body('identifier', new ParseStringPipe({ minLength: 3, maxLength: 20 })) identifier: string,
+  @Body('name', new ParseStringPipe({ minLength: 2, maxLength: 50, trim: true })) name: string,
+  @Body('notes', new ParseStringPipe({ maxLength: 500, trim: true })) notes: string,
+) {
+  return this.whalesService.create({ identifier, name, notes });
+}
+```
+
+**ParseStringOptions 选项:**
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `minLength` | `number` | `undefined` | 最小长度限制 |
+| `maxLength` | `number` | `undefined` | 最大长度限制 |
+| `pattern` | `RegExp` | `undefined` | 正则表达式匹配 |
+| `patternMessage` | `string` | `undefined` | 正则匹配失败的错误消息 |
+| `trim` | `boolean` | `true` | 自动修剪首尾空格 |
+| `toLowerCase` | `boolean` | `false` | 转为小写 |
+| `toUpperCase` | `boolean` | `false` | 转为大写 |
+
+**错误响应示例:**
+
+```json
+// 必填项为空
+{
+  "statusCode": 400,
+  "message": "name 不能为空",
+  "error": "Bad Request"
+}
+
+// 长度不足
+{
+  "statusCode": 400,
+  "message": "name 长度不能少于 2 个字符 (当前：1)",
+  "error": "Bad Request"
+}
+
+// 超出最大长度
+{
+  "statusCode": 400,
+  "message": "notes 长度不能超过 500 个字符 (当前：623)",
+  "error": "Bad Request"
+}
+
+// 正则匹配失败
+{
+  "statusCode": 400,
+  "message": "国家代码必须是 2 位大写字母",
+  "error": "Bad Request"
+}
+```
+
+**使用场景:**
+
+| 场景 | 示例 | 说明 |
+|------|------|------|
+| 鲸鱼标识符 | `identifier: BCX001` | 短代码，固定格式 |
+| 鲸鱼名称 | `name: 大白` | 2-50 字符，自动修剪 |
+| 备注/描述 | `notes: ...` | 限制最大长度 |
+| 用户名 | `username: researcher1` | 转小写，去空格 |
+| 国家/地区代码 | `countryCode: CN` | 正则验证格式 |
+
+**ParseStringPipe vs ParseOptionalStringPipe:**
+
+| 管道 | 必填/可选 | 空值处理 | 使用场景 |
+|------|----------|----------|----------|
+| `ParseStringPipe` | 必填 | 抛出异常 | 请求体中的必需字段 (name, identifier) |
+| `ParseOptionalStringPipe` | 可选 | 返回 `undefined` 或默认值 | 查询参数中的可选筛选条件 |
+
+---
 
 ### 📁 Pipes (管道) - ParseEmailPipe
 
@@ -1919,6 +2028,7 @@ getProfile(@CurrentUser() user: User) {
 |------|------|----------|
 | `ParseIntPipe` | 必填整数 | 资源 ID、页码、数量限制 |
 | `ParseFloatPipe` | 必填浮点数 | GPS 坐标、测量数据、距离半径 |
+| `ParseStringPipe` | 必填字符串 | 名称、标识符、备注 (带长度/正则验证) |
 | `ParseOptionalIntPipe` | 可选整数 | 分页参数、数量限制 |
 | `ParseOptionalFloatPipe` | 可选浮点数 | 坐标、测量数据 |
 | `ParseOptionalBooleanPipe` | 可选布尔值 | 状态筛选 (true/false/1/0/yes/no) |
@@ -1934,6 +2044,7 @@ getProfile(@CurrentUser() user: User) {
 | `ParseUrlPipe` | URL 验证 | 网站链接/资源 URL/回调地址 |
 | `ParseCoordinatePipe` | GPS 坐标验证 | 观测位置/迁徙轨迹/监测站点 |
 | `ParseCoordinatePairPipe` | 坐标对验证 | 中心点定位/范围搜索 |
+| `ParseArrayPipe` | 数组解析 | 多选筛选、批量操作、标签过滤 |
 
 ### Interceptors (拦截器)
 
@@ -2001,4 +2112,4 @@ app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 
 ---
 
-*最后更新：2026-03-30 04:45*
+*最后更新：2026-03-30 06:15*
