@@ -850,13 +850,85 @@ getProfile(@CurrentUser() user: User) {
 
 ---
 
+## 📋 快速参考
+
+### Pipes (验证管道)
+
+| 管道 | 用途 | 典型场景 |
+|------|------|----------|
+| `ParseOptionalIntPipe` | 可选整数 | 分页参数、数量限制 |
+| `ParseOptionalFloatPipe` | 可选浮点数 | 坐标、测量数据 |
+| `ParseOptionalBooleanPipe` | 可选布尔值 | 状态筛选 (true/false/1/0/yes/no) |
+| `ParseOptionalDatePipe` | 可选日期 | 日期范围筛选 |
+| `ParseOptionalStringPipe` | 可选字符串 | 搜索关键词、名称 |
+| `ParseEnumPipe` | 枚举值 | 性别/状态/等级筛选 |
+| `PaginationPipe` | 分页参数 | 统一处理 page/limit/offset |
+| `ParseISO8601Pipe` | 必填日期 | 时间范围查询的起止日期 |
+
+### Interceptors (拦截器)
+
+| 拦截器 | 用途 | 装饰器 |
+|--------|------|--------|
+| `TransformInterceptor` | 统一响应格式 | - |
+| `LoggingInterceptor` | 请求日志 | - |
+| `CacheInterceptor` | 响应缓存 | `@CacheKey()`, `@CacheTTL()` |
+| `TimeoutInterceptor` | 超时控制 | `@Timeout()` |
+| `RateLimitInterceptor` | 速率限制 | `@RateLimit()`, `@RateLimitTTL()` |
+| `ETagInterceptor` | 条件请求 | `@ETag()` |
+
+### Guards (守卫)
+
+| 守卫 | 用途 | 配合装饰器 |
+|------|------|------------|
+| `JwtAuthGuard` | JWT 认证 | `@Public()` 跳过认证 |
+| `RolesGuard` | 角色权限 | `@Roles()` |
+
+### Decorators (装饰器)
+
+| 装饰器 | 用途 | 示例 |
+|--------|------|------|
+| `@Public()` | 跳过认证 | 登录/注册/公开数据 |
+| `@Roles(...)` | 角色限制 | `@Roles(UserRole.ADMIN)` |
+| `@CurrentUser()` | 获取用户 | `@CurrentUser() user: User` |
+
+### Filters (过滤器)
+
+| 过滤器 | 用途 |
+|--------|------|
+| `HttpExceptionFilter` | 格式化 HTTP 异常 |
+| `AllExceptionsFilter` | 捕获所有未处理异常 |
+
+### 全局注册 (main.ts)
+
+```typescript
+// Guards
+app.useGlobalGuards(new JwtAuthGuard(), new RolesGuard());
+
+// Interceptors
+app.useGlobalInterceptors(
+  new TransformInterceptor(),
+  new LoggingInterceptor(),
+  new CacheInterceptor(),
+  new TimeoutInterceptor(),
+  new RateLimitInterceptor(),
+  new ETagInterceptor()
+);
+
+// Filters
+app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
+```
+
+---
+
 ## 最佳实践
 
 1. **全局工具放在 common/** - 避免跨模块循环依赖
 2. **优先使用装饰器** - 保持控制器代码简洁
 3. **统一错误处理** - 所有异常通过过滤器统一格式化
 4. **响应格式一致** - 通过拦截器封装标准响应结构
+5. **缓存 + 速率限制组合** - 高并发接口同时使用 `CacheInterceptor` 和 `RateLimitInterceptor`
+6. **超时控制** - 复杂查询使用 `@Timeout()` 防止资源阻塞
 
 ---
 
-*最后更新：2026-03-29 21:42*
+*最后更新：2026-03-29 22:15*
