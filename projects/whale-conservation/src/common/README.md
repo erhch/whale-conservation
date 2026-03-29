@@ -504,6 +504,7 @@ getStatistics() {
 - `ParseOptionalStringPipe` - 可选字符串解析管道 (支持修剪、长度验证、正则匹配、大小写转换)
 - `ParseEnumPipe` - 枚举值解析管道 (支持枚举类型验证、默认值、必填校验)
 - `PaginationPipe` - 分页参数解析管道 (统一处理 page/limit，自动计算 offset)
+- `ParseISO8601Pipe` - 必填 ISO 8601 日期解析管道 (支持范围验证)
 
 **使用示例:**
 
@@ -706,6 +707,81 @@ findSightings(
 - ✅ **安全限制** - 防止恶意请求过大的 `limit` 值
 - ✅ **类型安全** - TypeScript 类型定义，IDE 自动补全
 
+**ParseISO8601Pipe 使用示例:**
+
+```typescript
+import { ParseISO8601Pipe } from '@/common/pipes';
+
+// 必填日期参数 - 基础用法
+@Query('startDate', new ParseISO8601Pipe())
+startDate: Date;
+
+@Query('endDate', new ParseISO8601Pipe())
+endDate: Date;
+
+// 带范围验证 - 日期不能早于项目启动时间
+@Query('fromDate', new ParseISO8601Pipe({
+  min: new Date('2024-01-01')
+}))
+fromDate: Date;
+
+// 带范围验证 - 日期不能晚于当前时间
+@Query('toDate', new ParseISO8601Pipe({
+  max: new Date()
+}))
+toDate: Date;
+
+// 组合使用 - 时间范围查询
+@Get('environment/station/:stationId/range')
+findEnvironmentByRange(
+  @Param('stationId') stationId: string,
+  @Query('startDate', new ParseISO8601Pipe()) startDate: Date,
+  @Query('endDate', new ParseISO8601Pipe()) endDate: Date,
+  @Query('limit', new ParseOptionalIntPipe({ defaultValue: 100, max: 1000 })) limit: number,
+) {
+  return this.environmentService.findByDateRange(stationId, startDate, endDate, limit);
+}
+```
+
+**ParseISO8601Pipe 选项:**
+
+| 选项 | 类型 | 说明 |
+|------|------|------|
+| `min` | `Date` | 最小日期限制 (早于此日期会抛出异常) |
+| `max` | `Date` | 最大日期限制 (晚于此日期会抛出异常) |
+
+**错误响应示例:**
+
+```json
+// 缺少必填日期参数
+{
+  "statusCode": 400,
+  "message": "startDate 是必填项，请提供有效的日期 (ISO 8601 格式)",
+  "error": "Bad Request"
+}
+
+// 日期格式无效
+{
+  "statusCode": 400,
+  "message": "startDate 必须是有效的日期格式 (ISO 8601)",
+  "error": "Bad Request"
+}
+
+// 日期超出范围
+{
+  "statusCode": 400,
+  "message": "startDate 不能早于 2024-01-01T00:00:00.000Z",
+  "error": "Bad Request"
+}
+```
+
+**与 ParseOptionalDatePipe 的区别:**
+
+| 管道 | 必填/可选 | 默认值 | 使用场景 |
+|------|----------|--------|----------|
+| `ParseISO8601Pipe` | 必填 | ❌ 不支持 | 时间范围查询的起止日期等必填参数 |
+| `ParseOptionalDatePipe` | 可选 | ✅ 支持 | 筛选条件中的可选日期参数 |
+
 待实现:
 
 - `ParseUUIDPipe` - UUID 解析 (NestJS 内置，可直接使用)
@@ -783,4 +859,4 @@ getProfile(@CurrentUser() user: User) {
 
 ---
 
-*最后更新：2026-03-28 14:10*
+*最后更新：2026-03-29 21:42*
