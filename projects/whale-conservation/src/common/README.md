@@ -505,6 +505,7 @@ getStatistics() {
 - `ParseEnumPipe` - 枚举值解析管道 (支持枚举类型验证、默认值、必填校验)
 - `PaginationPipe` - 分页参数解析管道 (统一处理 page/limit，自动计算 offset)
 - `ParseISO8601Pipe` - 必填 ISO 8601 日期解析管道 (支持范围验证)
+- `ParseUUIDPipe` - UUID 格式验证管道 (支持版本验证、必填/可选模式)
 
 **使用示例:**
 
@@ -782,9 +783,77 @@ findEnvironmentByRange(
 | `ParseISO8601Pipe` | 必填 | ❌ 不支持 | 时间范围查询的起止日期等必填参数 |
 | `ParseOptionalDatePipe` | 可选 | ✅ 支持 | 筛选条件中的可选日期参数 |
 
+**ParseUUIDPipe 使用示例:**
+
+```typescript
+import { ParseUUIDPipe } from '@/common/pipes';
+
+// 必填 UUID 参数 - 基础用法 (默认 required: true)
+@Param('id', new ParseUUIDPipe())
+id: string;
+
+@Param('stationId', new ParseUUIDPipe())
+stationId: string;
+
+// 可选 UUID 参数 - 允许 undefined
+@Query('whaleId', new ParseUUIDPipe({ required: false }))
+whaleId?: string;
+
+// 指定 UUID 版本 - 仅接受 v4 UUID
+@Param('userId', new ParseUUIDPipe({ version: 4 }))
+userId: string;
+
+// 组合使用 - 带 UUID 验证的端点
+@Get('whales/:id/sightings')
+findWhaleSightings(
+  @Param('id', new ParseUUIDPipe()) whaleId: string,
+  @Query('stationId', new ParseUUIDPipe({ required: false })) stationId?: string,
+  @Query('page', new PaginationPipe()) pagination: PaginationResult,
+) {
+  return this.whalesService.findSightings(whaleId, { ...pagination, stationId });
+}
+```
+
+**ParseUUIDOptions 选项:**
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `version` | `1 \| 2 \| 3 \| 4 \| 5` | `undefined` | 指定 UUID 版本，不指定则接受任意版本 |
+| `required` | `boolean` | `true` | 是否必填，`false` 时允许 `undefined` |
+
+**错误响应示例:**
+
+```json
+// 缺少必填 UUID 参数
+{
+  "statusCode": 400,
+  "message": "id 是必填项，请提供有效的 UUID",
+  "error": "Bad Request"
+}
+
+// UUID 格式无效
+{
+  "statusCode": 400,
+  "message": "id 必须是有效的 UUID 格式",
+  "error": "Bad Request"
+}
+
+// UUID 版本不匹配
+{
+  "statusCode": 400,
+  "message": "userId 必须是有效的 UUID(v4) 格式",
+  "error": "Bad Request"
+}
+```
+
+**UUID 格式说明:**
+
+- 支持 UUID v1-v5 格式验证
+- 标准格式：`xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` (36 字符，含 4 个连字符)
+- 不区分大小写：`550e8400-e29b-41d4-a716-446655440000` 和 `550E8400-E29B-41D4-A716-446655440000` 均有效
+
 待实现:
 
-- `ParseUUIDPipe` - UUID 解析 (NestJS 内置，可直接使用)
 - 自定义业务验证管道 (根据业务需求扩展)
 
 ### 📁 Decorators (装饰器)
@@ -864,6 +933,7 @@ getProfile(@CurrentUser() user: User) {
 | `ParseEnumPipe` | 枚举值 | 性别/状态/等级筛选 |
 | `PaginationPipe` | 分页参数 | 统一处理 page/limit/offset |
 | `ParseISO8601Pipe` | 必填日期 | 时间范围查询的起止日期 |
+| `ParseUUIDPipe` | UUID 验证 | 资源 ID 参数验证 |
 
 ### Interceptors (拦截器)
 
@@ -931,4 +1001,4 @@ app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 
 ---
 
-*最后更新：2026-03-29 22:15*
+*最后更新：2026-03-29 22:45*

@@ -10,3 +10,4 @@ export { ParseOptionalStringPipe, type ParseOptionalStringOptions } from './pars
 export { ParseEnumPipe, type ParseEnumOptions } from './parse-enum.pipe';
 export { PaginationPipe, type PaginationOptions, type PaginationResult } from './pagination.pipe';
 export { ParseISO8601Pipe, type ParseISO8601Options } from './parse-iso8601.pipe';
+export { ParseUUIDPipe, type ParseUUIDOptions } from './parse-uuid.pipe';
