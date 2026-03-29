@@ -2,8 +2,8 @@
 
 > 鲸创管理系统 - RESTful API 规范
 
-版本：v0.1.0  
-最后更新：2026-03-27
+版本：v0.2.0  
+最后更新：2026-03-29
 
 ---
 
@@ -133,6 +133,27 @@
 }
 ```
 
+### PUT /auth/change-password
+修改密码 (需认证)
+
+**请求头:** `Authorization: Bearer <token>`
+
+**请求体:**
+```json
+{
+  "currentPassword": "string",
+  "newPassword": "string (8-32 字符)"
+}
+```
+
+**响应:** 200 OK
+```json
+{
+  "success": true,
+  "message": "密码修改成功"
+}
+```
+
 ---
 
 ## 物种管理
@@ -211,6 +232,15 @@
 
 **响应:** 204 No Content
 
+### GET /species/search
+搜索物种 (模糊匹配)
+
+**查询参数:**
+- `q` (string, required): 搜索关键词 (匹配常用名、学名或科名)
+- `page`, `pageSize` (分页)
+
+**响应:** 200 OK (分页物种列表)
+
 ---
 
 ## 鲸鱼个体管理
@@ -283,6 +313,15 @@
 
 **响应:** 200 OK (迁徙轨迹列表)
 
+### GET /whales/search
+搜索鲸鱼个体 (模糊匹配)
+
+**查询参数:**
+- `q` (string, required): 搜索关键词 (匹配名称、标识符或备注)
+- `page`, `pageSize` (分页)
+
+**响应:** 200 OK (分页鲸鱼个体列表)
+
 ---
 
 ## 观测记录
@@ -333,6 +372,16 @@
   ]
 }
 ```
+
+### GET /sightings/export/csv
+导出观测记录为 CSV
+
+**查询参数:**
+- `whaleId`, `observerId`, `stationId` (可选筛选)
+- `startDate`, `endDate` (时间范围)
+- `behavior` (行为类型)
+
+**响应:** 200 OK (CSV 文件，Content-Type: text/csv)
 
 ### POST /sightings
 创建观测记录 (researcher/volunteer)
@@ -410,6 +459,39 @@
 
 **响应:** 200 OK (时序数据数组)
 
+### GET /stations/search
+搜索监测站点 (模糊匹配)
+
+**查询参数:**
+- `q` (string, required): 搜索关键词 (匹配名称、代码或位置)
+- `page`, `pageSize` (分页)
+
+**响应:** 200 OK (分页站点列表)
+
+### GET /stations/statistics
+获取站点统计信息
+
+**响应:** 200 OK
+```json
+{
+  "success": true,
+  "data": {
+    "byType": {
+      "buoy": 5,
+      "shore": 2,
+      "ship": 1,
+      "satellite": 0
+    },
+    "byStatus": {
+      "active": 6,
+      "maintenance": 1,
+      "offline": 1
+    },
+    "total": 8
+  }
+}
+```
+
 ---
 
 ## 统计与分析
@@ -476,4 +558,5 @@
 
 ## 版本历史
 
+- v0.2.0 (2026-03-29): 新增搜索接口 (species/whales/stations)、站点统计、观测记录 CSV 导出、修改密码
 - v0.1.0 (2026-03-27): 初始 API 设计
