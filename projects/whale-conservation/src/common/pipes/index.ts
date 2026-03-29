@@ -2,6 +2,7 @@
  * Common Pipes - 公共验证管道
  */
 
+export { ParseIntPipe, type ParseIntOptions } from './parse-int.pipe';
 export { ParseOptionalIntPipe, type ParseOptionalIntOptions } from './parse-optional-int.pipe';
 export { ParseOptionalFloatPipe, type ParseOptionalFloatOptions } from './parse-optional-float.pipe';
 export { ParseOptionalBooleanPipe, type ParseOptionalBooleanOptions } from './parse-optional-boolean.pipe';

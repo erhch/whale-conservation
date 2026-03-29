@@ -497,6 +497,7 @@ getStatistics() {
 
 ✅ 已实现:
 
+- `ParseIntPipe` - 必填整数解析管道 (支持范围验证)
 - `ParseOptionalIntPipe` - 可选整数解析管道 (支持默认值、范围验证)
 - `ParseOptionalFloatPipe` - 可选浮点数解析管道 (支持默认值、范围验证、精度控制)
 - `ParseOptionalBooleanPipe` - 可选布尔值解析管道 (支持多种格式)
@@ -935,6 +936,86 @@ findAll(
 | `ParseBooleanPipe` | 必填 | 抛出异常 | 必须明确指定的布尔开关 |
 | `ParseOptionalBooleanPipe` | 可选 | 返回 `undefined` 或默认值 | 可选的筛选条件 |
 
+### 📁 Pipes (管道) - ParseIntPipe
+
+**ParseIntPipe 使用示例:**
+
+```typescript
+import { ParseIntPipe } from '@/common/pipes';
+
+// 必填整数参数 - 基础用法
+@Param('id', new ParseIntPipe())
+id: number;
+
+@Query('speciesId', new ParseIntPipe())
+speciesId: number;
+
+// 带范围验证 - 年龄必须在 0-100 之间
+@Query('age', new ParseIntPipe({ min: 0, max: 100 }))
+age: number;
+
+// 带范围验证 - 页码必须 >= 1
+@Query('page', new ParseIntPipe({ min: 1 }))
+page: number;
+
+// 在 Controller 中组合使用
+@Get('species/:id/sightings')
+findSpeciesSightings(
+  @Param('id', new ParseIntPipe()) speciesId: number,
+  @Query('limit', new ParseIntPipe({ min: 1, max: 100 })) limit: number,
+) {
+  return this.sightingsService.findBySpecies(speciesId, limit);
+}
+```
+
+**ParseIntOptions 选项:**
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `min` | `number` | `undefined` | 最小值限制 (小于此值会抛出异常) |
+| `max` | `number` | `undefined` | 最大值限制 (大于此值会抛出异常) |
+
+**错误响应示例:**
+
+```json
+// 缺少必填整数参数
+{
+  "statusCode": 400,
+  "message": "id 是必填项，请提供有效的整数",
+  "error": "Bad Request"
+}
+
+// 整数值无效
+{
+  "statusCode": 400,
+  "message": "page 必须是有效的整数",
+  "error": "Bad Request"
+}
+
+// 整数超出范围
+{
+  "statusCode": 400,
+  "message": "age 不能大于 100",
+  "error": "Bad Request"
+}
+```
+
+**使用场景:**
+
+| 场景 | 示例 | 说明 |
+|------|------|------|
+| 路径参数 ID | `/species/:id` | 资源 ID 必须为整数 |
+| 数量限制 | `?limit=50` | 返回数量限制 |
+| 年龄/计数 | `?age=5` | 必须是整数的业务字段 |
+| 页码 | `?page=1` | 分页页码 (通常 min=1) |
+
+**ParseIntPipe vs ParseOptionalIntPipe:**
+
+| 管道 | 必填/可选 | 空值处理 | 使用场景 |
+|------|----------|----------|----------|
+| `ParseIntPipe` | 必填 | 抛出异常 | 必须提供的整数参数 (如资源 ID) |
+| `ParseOptionalIntPipe` | 可选 | 返回 `undefined` 或默认值 | 可选的筛选条件 (如页码、过滤值) |
+
 待实现:
 
 - 自定义业务验证管道 (根据业务需求扩展)
@@ -1008,6 +1089,7 @@ getProfile(@CurrentUser() user: User) {
 
 | 管道 | 用途 | 典型场景 |
 |------|------|----------|
+| `ParseIntPipe` | 必填整数 | 资源 ID、页码、数量限制 |
 | `ParseOptionalIntPipe` | 可选整数 | 分页参数、数量限制 |
 | `ParseOptionalFloatPipe` | 可选浮点数 | 坐标、测量数据 |
 | `ParseOptionalBooleanPipe` | 可选布尔值 | 状态筛选 (true/false/1/0/yes/no) |
@@ -1085,4 +1167,4 @@ app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 
 ---
 
-*最后更新：2026-03-29 23:45*
+*最后更新：2026-03-30 00:15*
