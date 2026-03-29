@@ -1953,6 +1953,123 @@ async filterSightings(
 | `enum` | `Type/Record` | `undefined` | 枚举类型验证 |
 | `errorMessage` | `string` | `undefined` | 自定义错误消息 |
 
+---
+
+### 📁 Pipes (管道) - ParseUrlPipe
+
+`ParseUrlPipe` 用于验证 URL 地址格式，支持协议白名单、域名/IP 验证和必填/可选模式。
+
+**使用场景:**
+
+| 场景 | 示例 | 说明 |
+|------|------|------|
+| 网站链接 | `https://example.com` | 组织官网、项目页面 |
+| 资源 URL | `https://cdn.example.com/image.jpg` | 图片、视频等资源地址 |
+| API 回调 | `https://api.example.com/webhook` | 第三方回调地址 |
+| 数据源 | `https://data.example.com/feed.xml` | 外部数据源 URL |
+
+**基础用法:**
+
+```typescript
+import { ParseUrlPipe } from '@/common/pipes';
+
+// 必填 URL - 基础用法 (仅允许 http/https)
+@Body('website', new ParseUrlPipe())
+website: string;
+
+// 可选 URL - 允许 undefined
+@Query('imageUrl', new ParseUrlPipe({ required: false }))
+imageUrl?: string;
+
+// 必填 URL - 严格模式
+@Body('officialSite', new ParseUrlPipe({ required: true }))
+officialSite: string;
+```
+
+**协议配置:**
+
+```typescript
+// 允许 ftp 协议
+@Body('ftpUrl', new ParseUrlPipe({ protocols: ['http', 'https', 'ftp'] }))
+ftpUrl: string;
+
+// 仅允许 https (安全要求)
+@Body('secureUrl', new ParseUrlPipe({ protocols: ['https'] }))
+secureUrl: string;
+
+// 允许自定义协议
+@Body('customUrl', new ParseUrlPipe({ protocols: ['http', 'https', 'rtsp'] }))
+customUrl: string;
+```
+
+**IP 地址支持:**
+
+```typescript
+// 允许 IP 地址作为主机 (默认仅允许域名)
+@Body('apiEndpoint', new ParseUrlPipe({ allowIp: true }))
+apiEndpoint: string;
+
+// 本地开发 - 允许 localhost 和 IP
+@Body('devUrl', new ParseUrlPipe({ 
+  protocols: ['http', 'https'],
+  allowIp: true 
+}))
+devUrl: string;
+```
+
+**完整示例 - 组织信息:**
+
+```typescript
+import { Body, Controller, Post } from '@nestjs/common';
+import { ParseUrlPipe, ParseStringPipe } from '@/common/pipes';
+
+class CreateOrganizationDto {
+  @Body('name', new ParseStringPipe({ maxLength: 100 }))
+  name: string;
+  
+  @Body('website', new ParseUrlPipe())
+  website: string;
+  
+  @Body('logoUrl', new ParseUrlPipe({ required: false }))
+  logoUrl?: string;
+  
+  @Body('apiCallback', new ParseUrlPipe({ 
+    protocols: ['https'],
+    allowIp: false 
+  }))
+  apiCallback: string;
+}
+
+@Post('organizations')
+async createOrganization(@Body() dto: CreateOrganizationDto) {
+  return this.organizationsService.create(dto);
+}
+```
+
+**配置选项:**
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `required` | `boolean` | `true` | 是否必填 |
+| `protocols` | `string[]` | `['http', 'https']` | 允许的协议列表 |
+| `allowIp` | `boolean` | `false` | 是否允许 IP 地址作为主机 |
+
+**验证规则:**
+
+- 必须包含有效协议 (如 `http://`, `https://`)
+- 必须包含有效域名或 IP 地址
+- 可选端口号 (10-65535)
+- 可选路径、查询参数、片段
+- 协议必须在白名单内
+
+**错误消息示例:**
+
+```
+- "URL 地址是必填项，请提供有效的 URL"
+- "xxx 不是有效的 URL 地址格式"
+- "不支持的协议：ftp，仅允许 http, https"
+```
+
 待实现:
 
 - 自定义业务验证管道 (根据业务需求扩展)
