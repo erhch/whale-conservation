@@ -483,6 +483,7 @@ getStatistics() {
 - `ParseOptionalDatePipe` - 可选日期解析管道 (支持默认值、日期范围验证)
 - `ParseOptionalStringPipe` - 可选字符串解析管道 (支持修剪、长度验证、正则匹配、大小写转换)
 - `ParseEnumPipe` - 枚举值解析管道 (支持枚举类型验证、默认值、必填校验)
+- `PaginationPipe` - 分页参数解析管道 (统一处理 page/limit，自动计算 offset)
 
 **使用示例:**
 
@@ -623,6 +624,67 @@ findAll(
 | `'false'`, `'0'`, `'no'`, `'off'`, `'n'` | `false` |
 | `undefined`, `null`, `''` | 默认值 |
 | 其他 | 抛出 BadRequestException |
+
+**PaginationPipe 使用示例:**
+
+```typescript
+import { PaginationPipe, type PaginationResult } from '@/common/pipes';
+
+// 基础用法 - 默认 page=1, limit=10
+@Get('whales')
+findAll(@Query(new PaginationPipe()) pagination: PaginationResult) {
+  // pagination: { page: 1, limit: 10, offset: 0 }
+  return this.whalesService.findAll(pagination.page, pagination.limit);
+}
+
+// 自定义配置 - 默认页大小 20，最大 50
+@Get('species')
+findAllSpecies(
+  @Query(new PaginationPipe({ defaultLimit: 20, maxLimit: 50 }))
+  pagination: PaginationResult
+) {
+  return this.speciesService.findAll(pagination.page, pagination.limit);
+}
+
+// 组合其他筛选条件
+@Get('sightings')
+findSightings(
+  @Query(new PaginationPipe({ defaultLimit: 25 })) pagination: PaginationResult,
+  @Query('speciesId', new ParseOptionalIntPipe()) speciesId?: number,
+  @Query('startDate', new ParseOptionalDatePipe()) startDate?: Date,
+) {
+  return this.sightingsService.findAll({
+    ...pagination,
+    speciesId,
+    startDate,
+  });
+}
+```
+
+**PaginationPipe 选项:**
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `defaultPage` | `number` | `1` | 默认页码 (从 1 开始) |
+| `defaultLimit` | `number` | `10` | 默认每页数量 |
+| `minPage` | `number` | `1` | 最小页码 |
+| `minLimit` | `number` | `1` | 最小每页数量 |
+| `maxLimit` | `number` | `100` | 最大每页数量 (防止过度查询) |
+
+**PaginationResult 返回值:**
+
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| `page` | `number` | 当前页码 (从 1 开始) |
+| `limit` | `number` | 每页数量 |
+| `offset` | `number` | 偏移量 (用于 SQL: OFFSET) |
+
+**优势:**
+
+- ✅ **统一分页逻辑** - 所有列表接口使用相同的分页参数处理
+- ✅ **自动计算 offset** - 无需手动计算 `(page - 1) * limit`
+- ✅ **安全限制** - 防止恶意请求过大的 `limit` 值
+- ✅ **类型安全** - TypeScript 类型定义，IDE 自动补全
 
 待实现:
 

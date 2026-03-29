@@ -8,3 +8,4 @@ export { ParseOptionalBooleanPipe, type ParseOptionalBooleanOptions } from './pa
 export { ParseOptionalDatePipe, type ParseOptionalDateOptions } from './parse-optional-date.pipe';
 export { ParseOptionalStringPipe, type ParseOptionalStringOptions } from './parse-optional-string.pipe';
 export { ParseEnumPipe, type ParseEnumOptions } from './parse-enum.pipe';
+export { PaginationPipe, type PaginationOptions, type PaginationResult } from './pagination.pipe';
