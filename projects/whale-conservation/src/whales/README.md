@@ -2,7 +2,7 @@
 
 > 管理鲸鱼个体信息的核心模块，支持个体档案、生命状态追踪、观测历史关联
 
-**版本:** 1.1.0  
+**版本:** 1.2.0  
 **最后更新:** 2026-03-29  
 **状态:** ✅ 完成
 
@@ -30,6 +30,7 @@ Whales Module 负责管理鲸鱼个体的完整档案信息，包括：
 | 更新个体信息 | 修改个体档案信息 | ✅ |
 | 删除个体记录 | 移除个体档案 (软删除推荐) | ✅ |
 | 个体搜索 | 按编号/昵称/备注模糊搜索 | ✅ |
+| 观测记录查询 | 获取某只鲸鱼的观测记录 (分页 + 日期筛选) | ✅ |
 | 响应缓存 | 列表/详情/搜索接口自动缓存 | ✅ |
 | 观测记录关联 | 自动关联该个体的所有观测记录 | ✅ |
 
@@ -754,6 +755,169 @@ console.log(`搜索结果：${whales.length} 条`);
 
 ---
 
+### 7. 获取鲸鱼的观测记录
+
+**GET** `/api/v1/whales/:id/sightings`
+
+获取指定鲸鱼个体的观测记录列表，支持分页和日期范围筛选。
+
+**认证要求:** ❌ 公开访问  
+**缓存策略:** ✅ 5 分钟缓存
+
+#### 请求参数
+
+**路径参数:**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `id` | UUID | ✅ | 鲸鱼个体 ID |
+
+**查询参数:**
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| `page` | number | ❌ | 1 | 页码 (从 1 开始) |
+| `limit` | number | ❌ | 10 | 每页数量 (1-100) |
+| `startDate` | string (ISO 8601) | ❌ | - | 开始日期 (包含) |
+| `endDate` | string (ISO 8601) | ❌ | - | 结束日期 (包含) |
+
+#### 响应格式
+
+```json
+{
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440100",
+      "whaleId": "550e8400-e29b-41d4-a716-446655440000",
+      "stationId": "st-001",
+      "station": {
+        "id": "st-001",
+        "code": "ST001",
+        "name": "东海监测站",
+        "type": "fixed",
+        "status": "active"
+      },
+      "observerId": "usr-001",
+      "observer": {
+        "id": "usr-001",
+        "username": "研究员 A",
+        "email": "researcher@example.com"
+      },
+      "observedAt": "2026-03-20T14:30:00.000Z",
+      "latitude": 31.2304,
+      "longitude": 121.4737,
+      "locationName": "东海海域",
+      "behavior": "觅食",
+      "groupSize": 3,
+      "notes": "观察到母子互动",
+      "photoUrls": ["https://example.com/photos/sighting-001.jpg"],
+      "weather": "晴朗",
+      "seaState": 2,
+      "isVerified": true,
+      "createdAt": "2026-03-20T15:00:00.000Z",
+      "updatedAt": "2026-03-20T15:00:00.000Z"
+    }
+  ],
+  "total": 23,
+  "page": 1,
+  "limit": 10
+}
+```
+
+#### 字段说明
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `data` | array | 观测记录列表 |
+| `data[].id` | UUID | 观测记录 ID |
+| `data[].whaleId` | UUID | 鲸鱼个体 ID |
+| `data[].stationId` | UUID | 监测站点 ID (可能为 null) |
+| `data[].station` | object | 监测站点详情 (可能为 null) |
+| `data[].observerId` | UUID | 观测者 ID |
+| `data[].observer` | object | 观测者详情 |
+| `data[].observedAt` | string | 观测时间 (ISO 8601) |
+| `data[].latitude` | number | 纬度 |
+| `data[].longitude` | number | 经度 |
+| `data[].locationName` | string | 地点名称 |
+| `data[].behavior` | string | 行为描述 |
+| `data[].groupSize` | number | 群体数量 |
+| `data[].notes` | string | 备注 |
+| `data[].photoUrls` | array | 照片 URLs |
+| `data[].weather` | string | 天气状况 |
+| `data[].seaState` | number | 海况等级 (0-9) |
+| `data[].isVerified` | boolean | 是否已验证 |
+| `total` | number | 总记录数 |
+| `page` | number | 当前页码 |
+| `limit` | number | 每页数量 |
+
+#### cURL 示例
+
+```bash
+# 获取鲸鱼的全部观测记录 (第 1 页，每页 10 条)
+curl -X GET "http://localhost:3000/api/v1/whales/550e8400-e29b-41d4-a716-446655440000/sightings"
+
+# 获取第 2 页，每页 20 条
+curl -X GET "http://localhost:3000/api/v1/whales/550e8400-e29b-41d4-a716-446655440000/sightings?page=2&limit=20"
+
+# 获取 2026 年 3 月的观测记录
+curl -X GET "http://localhost:3000/api/v1/whales/550e8400-e29b-41d4-a716-446655440000/sightings?startDate=2026-03-01T00:00:00Z&endDate=2026-03-31T23:59:59Z"
+
+# 获取最近 30 天的观测记录
+curl -X GET "http://localhost:3000/api/v1/whales/550e8400-e29b-41d4-a716-446655440000/sightings?startDate=$(date -d '30 days ago' -Iseconds)"
+```
+
+#### JavaScript 示例
+
+```javascript
+// Fetch API
+async function getWhaleSightings(whaleId, options = {}) {
+  const { page = 1, limit = 10, startDate, endDate } = options;
+  
+  const params = new URLSearchParams({ page, limit });
+  if (startDate) params.append('startDate', startDate);
+  if (endDate) params.append('endDate', endDate);
+  
+  const response = await fetch(
+    `http://localhost:3000/api/v1/whales/${whaleId}/sightings?${params}`
+  );
+  return response.json();
+}
+
+// 使用示例
+const result = await getWhaleSightings('550e8400-e29b-41d4-a716-446655440000', {
+  page: 1,
+  limit: 20,
+  startDate: '2026-03-01T00:00:00Z',
+});
+
+console.log(`共 ${result.total} 条观测记录`);
+result.data.forEach(sighting => {
+  console.log(`${sighting.observedAt} - ${sighting.locationName}: ${sighting.behavior}`);
+});
+```
+
+#### 使用场景
+
+| 场景 | 说明 |
+|------|------|
+| 个体观测历史 | 查看某只鲸鱼的完整观测记录 |
+| 时间范围分析 | 分析特定时间段内的观测活动 |
+| 迁徙轨迹追踪 | 结合观测时间和地点构建迁徙路径 |
+| 行为研究 | 统计某只鲸鱼的行为模式 |
+| 数据导出 | 分页获取全部观测记录用于导出 |
+
+#### 注意事项
+
+| 事项 | 说明 |
+|------|------|
+| 鲸鱼不存在 | 返回 404 Not Found |
+| 无观测记录 | 返回 `data: []`, `total: 0` |
+| 日期格式 | 使用 ISO 8601 格式 (如：2026-03-29T00:00:00Z) |
+| 排序 | 按观测时间倒序 (最新观测优先) |
+| 关联数据 | 自动包含 station 和 observer 详情 |
+
+---
+
 ## 🔄 缓存策略
 
 ### 缓存配置
@@ -763,6 +927,7 @@ console.log(`搜索结果：${whales.length} 条`);
 | `GET /whales` | ✅ | 300s | 列表查询缓存 5 分钟 |
 | `GET /whales/:id` | ✅ | 300s | 详情查询缓存 5 分钟 |
 | `GET /whales/search` | ✅ | 300s | 搜索查询缓存 5 分钟 |
+| `GET /whales/:id/sightings` | ✅ | 300s | 观测记录查询缓存 5 分钟 |
 | `POST /whales` | ❌ | - | 创建操作不缓存 |
 | `PUT /whales/:id` | ❌ | - | 更新操作不缓存 |
 | `DELETE /whales/:id` | ❌ | - | 删除操作不缓存 |

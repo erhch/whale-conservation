@@ -84,4 +84,26 @@ export class WhalesController {
   async search(@Query('q') query: string): Promise<Whale[]> {
     return this.whalesService.search(query);
   }
+
+  @Get(':id/sightings')
+  @ApiOperation({ summary: '获取某只鲸鱼的观测记录 (支持分页和日期范围筛选)' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: '页码 (默认 1)', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: '每页数量 (默认 10)', example: 10 })
+  @ApiQuery({ name: 'startDate', required: false, type: String, description: '开始日期 (ISO 8601)', example: '2026-01-01T00:00:00Z' })
+  @ApiQuery({ name: 'endDate', required: false, type: String, description: '结束日期 (ISO 8601)', example: '2026-03-29T23:59:59Z' })
+  @UseInterceptors(CacheInterceptor)
+  async findSightings(
+    @Param('id') id: string,
+    @Query('page', new ParseOptionalIntPipe({ defaultValue: 1, min: 1 })) page: number,
+    @Query('limit', new ParseOptionalIntPipe({ defaultValue: 10, min: 1, max: 100 })) limit: number,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ): Promise<{ data: any[]; total: number; page: number; limit: number }> {
+    return this.whalesService.findSightings(id, {
+      page,
+      limit,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+    });
+  }
 }

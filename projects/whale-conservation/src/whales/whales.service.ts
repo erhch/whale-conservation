@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 
 import { Whale, LifeStatus } from './entities/whale.entity';
 import { CreateWhaleDto, UpdateWhaleDto } from './dto';
+import { Sighting } from '../sightings/entities/sighting.entity';
 
 interface FindWhalesOptions {
   page: number;
@@ -15,6 +16,13 @@ interface FindWhalesOptions {
   speciesId?: string;
   sex?: string;
   active?: boolean;
+}
+
+interface FindSightingsOptions {
+  page: number;
+  limit: number;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 @Injectable()
@@ -101,5 +109,46 @@ export class WhalesService {
       .orWhere('whale.notes LIKE :term', { term: searchTerm })
       .orderBy('whale.createdAt', 'DESC')
       .getMany();
+  }
+
+  /**
+   * 获取某只鲸鱼的观测记录 (支持分页和日期范围筛选)
+   */
+  async findSightings(
+    whaleId: string,
+    options: FindSightingsOptions,
+  ): Promise<{ data: Sighting[]; total: number; page: number; limit: number }> {
+    const { page, limit, startDate, endDate } = options;
+    const skip = (page - 1) * limit;
+
+    // 验证鲸鱼是否存在
+    const whale = await this.whaleRepository.findOne({ where: { id: whaleId } });
+    if (!whale) {
+      throw new NotFoundException('鲸鱼个体不存在');
+    }
+
+    const queryBuilder = this.whaleRepository
+      .createQueryBuilder('whale')
+      .leftJoinAndSelect('whale.sightings', 'sighting')
+      .leftJoinAndSelect('sighting.station', 'station')
+      .leftJoinAndSelect('sighting.observer', 'observer')
+      .where('whale.id = :whaleId', { whaleId })
+      .orderBy('sighting.observedAt', 'DESC')
+      .skip(skip)
+      .take(limit);
+
+    // 日期范围筛选
+    if (startDate) {
+      queryBuilder.andWhere('sighting.observedAt >= :startDate', { startDate });
+    }
+    if (endDate) {
+      queryBuilder.andWhere('sighting.observedAt <= :endDate', { endDate });
+    }
+
+    const result = await queryBuilder.getManyAndCount();
+    const sightings = result[0].length > 0 ? result[0][0].sightings : [];
+    const total = result[1];
+
+    return { data: sightings, total, page, limit };
   }
 }
