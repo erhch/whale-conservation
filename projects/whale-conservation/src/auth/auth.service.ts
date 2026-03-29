@@ -2,13 +2,13 @@
  * 认证服务
  */
 
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { User, UserRole } from './entities/user.entity';
-import { RegisterDto, LoginDto } from './dto';
+import { RegisterDto, LoginDto, ChangePasswordDto } from './dto';
 
 @Injectable()
 export class AuthService {
@@ -111,6 +111,35 @@ export class AuthService {
     }
 
     return this.sanitizeUser(user);
+  }
+
+  /**
+   * 修改密码
+   */
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
+    const { currentPassword, newPassword } = changePasswordDto;
+
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new UnauthorizedException('用户不存在');
+    }
+
+    // 验证当前密码
+    if (!(await user.validatePassword(currentPassword))) {
+      throw new BadRequestException('当前密码错误');
+    }
+
+    // 检查新密码是否与旧密码相同
+    if (currentPassword === newPassword) {
+      throw new BadRequestException('新密码不能与当前密码相同');
+    }
+
+    // 更新密码 (会自动哈希)
+    user.password = newPassword;
+    await this.userRepository.save(user);
+
+    return { message: '密码修改成功' };
   }
 
   /**

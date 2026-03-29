@@ -101,7 +101,29 @@ GET /api/v1/species
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-### 4. 获取当前用户信息
+### 4. 修改密码
+
+```typescript
+POST /api/v1/auth/change-password
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "currentPassword": "OldPass123!",
+  "newPassword": "NewSecurePass456!"
+}
+```
+
+**响应示例:**
+
+```json
+{
+  "success": true,
+  "message": "密码修改成功"
+}
+```
+
+### 5. 获取当前用户信息
 
 ```typescript
 GET /api/v1/auth/me
@@ -379,6 +401,10 @@ async fetchSpecies() {
 - [ ] OAuth2 第三方登录 (GitHub/Google)
 - [ ] API Key 支持 (服务端对服务端认证)
 
+## 📋 更新日志
+
+- **2026-03-29**: 新增修改密码接口 (`POST /auth/change-password`)
+
 ## 📚 相关文档
 
 - [Common Module 快速上手](../common/README.md) - @Public() 装饰器使用
@@ -388,5 +414,5 @@ async fetchSpecies() {
 ---
 
 <div align="center">
-  <sub>最后更新：2026-03-28</sub>
+  <sub>最后更新：2026-03-29</sub>
 </div>

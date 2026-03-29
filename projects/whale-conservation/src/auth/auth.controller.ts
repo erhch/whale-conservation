@@ -18,7 +18,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto } from './dto';
+import { RegisterDto, LoginDto, ChangePasswordDto } from './dto';
 import { User } from './entities/user.entity';
 
 @ApiTags('auth')
@@ -61,5 +61,16 @@ export class AuthController {
   @ApiResponse({ status: 200, description: '获取成功' })
   async getProfile(@CurrentUser() user: User) {
     return this.authService.getProfile(user.id);
+  }
+
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '修改密码' })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  @ApiResponse({ status: 200, description: '修改成功' })
+  @ApiResponse({ status: 400, description: '当前密码错误或新密码不合规' })
+  async changePassword(@CurrentUser() user: User, @Body() changePasswordDto: ChangePasswordDto) {
+    return this.authService.changePassword(user.id, changePasswordDto);
   }
 }

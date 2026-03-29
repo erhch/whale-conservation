@@ -32,3 +32,18 @@ Thumbs.db
 # Build
 dist/
 build/
+
+# OpenClaw workspace (root level only)
+.openclaw/
+/AGENTS.md
+/HEARTBEAT.md
+/IDENTITY.md
+/SOUL.md
+/TOOLS.md
+/USER.md
+/memory/
+/skills/
+
+# Temporary files (root level only)
+/*.txt
+/销售*.md
