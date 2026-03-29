@@ -76,4 +76,12 @@ export class WhalesController {
   async remove(@Param('id') id: string): Promise<void> {
     return this.whalesService.remove(id);
   }
+
+  @Get('search')
+  @ApiOperation({ summary: '搜索鲸鱼个体 (支持编号/昵称/备注模糊搜索)' })
+  @ApiQuery({ name: 'q', required: true, type: String, description: '搜索关键词', example: '大白' })
+  @UseInterceptors(CacheInterceptor)
+  async search(@Query('q') query: string): Promise<Whale[]> {
+    return this.whalesService.search(query);
+  }
 }

@@ -2,8 +2,8 @@
 
 > 管理鲸鱼个体信息的核心模块，支持个体档案、生命状态追踪、观测历史关联
 
-**版本:** 1.0.0  
-**最后更新:** 2026-03-28  
+**版本:** 1.1.0  
+**最后更新:** 2026-03-29  
 **状态:** ✅ 完成
 
 ---
@@ -29,7 +29,8 @@ Whales Module 负责管理鲸鱼个体的完整档案信息，包括：
 | 创建个体记录 | 添加新的鲸鱼个体档案 | ✅ |
 | 更新个体信息 | 修改个体档案信息 | ✅ |
 | 删除个体记录 | 移除个体档案 (软删除推荐) | ✅ |
-| 响应缓存 | 列表/详情接口自动缓存 | ✅ |
+| 个体搜索 | 按编号/昵称/备注模糊搜索 | ✅ |
+| 响应缓存 | 列表/详情/搜索接口自动缓存 | ✅ |
 | 观测记录关联 | 自动关联该个体的所有观测记录 | ✅ |
 
 ---
@@ -609,6 +610,150 @@ async function deleteWhale(id) {
 
 ---
 
+### 6. 搜索鲸鱼个体
+
+**GET** `/api/v1/whales/search`
+
+搜索鲸鱼个体，支持按编号、昵称、备注进行模糊搜索。
+
+**认证要求:** ❌ 公开访问  
+**缓存策略:** ✅ 5 分钟缓存
+
+#### 请求参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `q` | string | ✅ | 搜索关键词 |
+
+#### 搜索规则
+
+| 规则 | 说明 |
+|------|------|
+| 模糊匹配 | 使用 LIKE 查询，支持部分匹配 |
+| 搜索字段 | `identifier` (编号)、`name` (昵称)、`notes` (备注) |
+| 大小写 | 不区分大小写 (PostgreSQL LIKE 默认行为) |
+| 空查询 | 返回空数组 `[]` |
+| 排序 | 按创建时间倒序 (最新创建的优先) |
+
+#### 响应示例
+
+```json
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "identifier": "BCX001",
+    "name": "大白",
+    "speciesId": "sp-001",
+    "species": {
+      "id": "sp-001",
+      "scientificName": "Megaptera novaeangliae",
+      "commonNameZh": "座头鲸"
+    },
+    "sex": "M",
+    "estimatedAge": 8,
+    "length": 14.5,
+    "weight": 32.0,
+    "lifeStatus": "alive",
+    "distinctiveFeatures": "左鳍有明显疤痕",
+    "photoUrl": "https://example.com/photos/bcx001.jpg",
+    "firstSightedAt": "2024-03-15T08:30:00Z",
+    "lastSightedAt": "2026-03-20T14:20:00Z",
+    "lastSightedLocation": "北海湾观测点 A",
+    "createdAt": "2024-03-15T10:00:00Z",
+    "updatedAt": "2026-03-20T15:00:00Z"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440002",
+    "identifier": "BCX003",
+    "name": "大白鲨",
+    "speciesId": "sp-002",
+    "species": {
+      "id": "sp-002",
+      "scientificName": "Carcharodon carcharias",
+      "commonNameZh": "大白鲨"
+    },
+    "sex": "F",
+    "estimatedAge": 12,
+    "length": 5.2,
+    "lifeStatus": "alive",
+    "createdAt": "2025-06-10T09:00:00Z",
+    "updatedAt": "2026-03-15T11:30:00Z"
+  }
+]
+```
+
+#### cURL 示例
+
+```bash
+# 搜索编号包含"BCX"的鲸鱼
+curl -X GET "http://localhost:3000/api/v1/whales/search?q=BCX"
+
+# 搜索昵称包含"大白"的鲸鱼
+curl -X GET "http://localhost:3000/api/v1/whales/search?q=大白"
+
+# 搜索备注包含"疤痕"的鲸鱼
+curl -X GET "http://localhost:3000/api/v1/whales/search?q=疤痕"
+
+# 空查询返回空数组
+curl -X GET "http://localhost:3000/api/v1/whales/search?q="
+```
+
+#### JavaScript 示例
+
+```javascript
+// Fetch API
+async function searchWhales(query) {
+  if (!query || query.trim().length === 0) {
+    return [];
+  }
+  
+  const response = await fetch(`http://localhost:3000/api/v1/whales/search?q=${encodeURIComponent(query)}`);
+  return response.json();
+}
+
+// 使用示例
+const results = await searchWhales('大白');
+console.log(`找到 ${results.length} 条匹配记录`);
+results.forEach(whale => {
+  console.log(`${whale.identifier} - ${whale.name || '未命名'} (${whale.species.commonNameZh})`);
+});
+```
+
+```javascript
+// Axios
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'http://localhost:3000/api/v1',
+});
+
+async function searchWhales(query) {
+  if (!query || query.trim().length === 0) {
+    return [];
+  }
+  
+  const response = await api.get('/whales/search', {
+    params: { q: query },
+  });
+  return response.data;
+}
+
+// 使用示例
+const whales = await searchWhales('BCX');
+console.log(`搜索结果：${whales.length} 条`);
+```
+
+#### 使用场景
+
+| 场景 | 示例查询 | 说明 |
+|------|----------|------|
+| 快速查找个体 | `q=BCX001` | 通过编号精确查找 |
+| 昵称搜索 | `q=大白` | 查找昵称包含关键词的个体 |
+| 特征搜索 | `q=疤痕` | 查找备注中包含特定特征的个体 |
+| 模糊匹配 | `q=小白` | 可能匹配"小白"、"小白鲸"等 |
+
+---
+
 ## 🔄 缓存策略
 
 ### 缓存配置
@@ -617,6 +762,7 @@ async function deleteWhale(id) {
 |------|------|-----|------|
 | `GET /whales` | ✅ | 300s | 列表查询缓存 5 分钟 |
 | `GET /whales/:id` | ✅ | 300s | 详情查询缓存 5 分钟 |
+| `GET /whales/search` | ✅ | 300s | 搜索查询缓存 5 分钟 |
 | `POST /whales` | ❌ | - | 创建操作不缓存 |
 | `PUT /whales/:id` | ❌ | - | 更新操作不缓存 |
 | `DELETE /whales/:id` | ❌ | - | 删除操作不缓存 |
@@ -856,6 +1002,7 @@ const whales = await this.whalesService.findAll({
 
 | 功能 | 优先级 | 说明 |
 |------|--------|------|
+| 个体搜索 | ✅ 已完成 | 按编号/昵称/备注模糊搜索 |
 | 照片上传 | 🔴 高 | 支持直接上传图片，自动存储到对象存储 |
 | 迁徙轨迹 | 🟡 中 | 基于观测记录生成迁徙路径可视化 |
 | 亲缘关系 | 🟡 中 | 记录母子关系、家族谱系 |

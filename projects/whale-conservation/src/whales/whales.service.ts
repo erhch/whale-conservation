@@ -82,4 +82,24 @@ export class WhalesService {
     await this.findOne(id);
     await this.whaleRepository.delete(id);
   }
+
+  /**
+   * 搜索鲸鱼个体 - 支持按编号、昵称、备注模糊搜索
+   */
+  async search(query: string): Promise<Whale[]> {
+    if (!query || query.trim().length === 0) {
+      return [];
+    }
+
+    const searchTerm = `%${query.trim()}%`;
+
+    return this.whaleRepository
+      .createQueryBuilder('whale')
+      .leftJoinAndSelect('whale.species', 'species')
+      .where('whale.identifier LIKE :term', { term: searchTerm })
+      .orWhere('whale.name LIKE :term', { term: searchTerm })
+      .orWhere('whale.notes LIKE :term', { term: searchTerm })
+      .orderBy('whale.createdAt', 'DESC')
+      .getMany();
+  }
 }
