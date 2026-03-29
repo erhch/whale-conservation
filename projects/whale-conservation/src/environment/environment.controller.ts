@@ -82,4 +82,22 @@ export class EnvironmentController {
     await this.environmentService.remove(id);
     return { message: '环境记录已删除' };
   }
+
+  /**
+   * 按时间范围查询环境数据
+   */
+  @Get('station/:stationId/range')
+  @ApiOperation({ summary: '按时间范围查询环境数据' })
+  @ApiParam({ name: 'stationId', description: '站点 ID', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiQuery({ name: 'startDate', required: true, description: '开始时间 (ISO 8601)', example: '2026-03-01T00:00:00.000Z' })
+  @ApiQuery({ name: 'endDate', required: true, description: '结束时间 (ISO 8601)', example: '2026-03-31T23:59:59.000Z' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: '返回数量上限', example: 100 })
+  async findByDateRange(
+    @Param('stationId', new ParseUUIDPipe()) stationId: string,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Query('limit', new ParseOptionalIntPipe({ defaultValue: 100, min: 1, max: 1000 })) limit: number,
+  ) {
+    return this.environmentService.findByDateRange(stationId, startDate, endDate, limit);
+  }
 }

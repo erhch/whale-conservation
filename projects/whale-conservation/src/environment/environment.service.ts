@@ -79,19 +79,35 @@ export class EnvironmentService {
   }
 
   /**
-   * 获取时间段内的环境数据
+   * 按时间范围查询环境数据
    */
   async findByDateRange(
     stationId: string,
-    startDate: Date,
-    endDate: Date,
+    startDate: string,
+    endDate: string,
+    limit: number = 100,
   ): Promise<EnvironmentLog[]> {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new BadRequestException('Invalid date format. Use ISO 8601 format.');
+    }
+
+    if (start > end) {
+      throw new BadRequestException('startDate must be before endDate');
+    }
+
     return this.environmentRepository.find({
       where: {
         station_id: stationId,
-        recorded_at: startDate,
+        recorded_at: {
+          $gte: start,
+          $lte: end,
+        },
       },
       order: { recorded_at: 'ASC' },
+      take: limit,
     });
   }
 
