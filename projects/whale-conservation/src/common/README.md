@@ -498,6 +498,7 @@ getStatistics() {
 ✅ 已实现:
 
 - `ParseIntPipe` - 必填整数解析管道 (支持范围验证)
+- `ParseFloatPipe` - 必填浮点数解析管道 (支持范围验证、精度控制)
 - `ParseOptionalIntPipe` - 可选整数解析管道 (支持默认值、范围验证)
 - `ParseOptionalFloatPipe` - 可选浮点数解析管道 (支持默认值、范围验证、精度控制)
 - `ParseOptionalBooleanPipe` - 可选布尔值解析管道 (支持多种格式)
@@ -1201,6 +1202,99 @@ findSpeciesSightings(
 | `ParseIntPipe` | 必填 | 抛出异常 | 必须提供的整数参数 (如资源 ID) |
 | `ParseOptionalIntPipe` | 可选 | 返回 `undefined` 或默认值 | 可选的筛选条件 (如页码、过滤值) |
 
+### 📁 Pipes (管道) - ParseFloatPipe
+
+**ParseFloatPipe 使用示例:**
+
+```typescript
+import { ParseFloatPipe } from '@/common/pipes';
+
+// 必填浮点数参数 - 基础用法
+@Query('latitude', new ParseFloatPipe())
+latitude: number;
+
+@Query('longitude', new ParseFloatPipe())
+longitude: number;
+
+// 带范围验证 - 纬度必须在 -90 到 90 之间
+@Query('lat', new ParseFloatPipe({ min: -90, max: 90 }))
+latitude: number;
+
+// 带精度控制 - 最多保留 6 位小数
+@Query('accuracy', new ParseFloatPipe({ precision: 6 }))
+accuracy: number;
+
+// 组合验证 - 范围 + 精度
+@Query('waterTemperature', new ParseFloatPipe({ min: -2, max: 30, precision: 2 }))
+waterTemperature: number;
+
+// 在 Controller 中组合使用
+@Get('sightings/nearby')
+findNearbySightings(
+  @Query('lat', new ParseFloatPipe({ min: -90, max: 90 })) latitude: number,
+  @Query('lng', new ParseFloatPipe({ min: -180, max: 180 })) longitude: number,
+  @Query('radius', new ParseFloatPipe({ min: 0.1, max: 100, precision: 2 })) radius: number,
+) {
+  return this.sightingsService.findNearby(latitude, longitude, radius);
+}
+```
+
+**ParseFloatOptions 选项:**
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `min` | `number` | `undefined` | 最小值限制 (小于此值会抛出异常) |
+| `max` | `number` | `undefined` | 最大值限制 (大于此值会抛出异常) |
+| `precision` | `number` | `undefined` | 小数位数限制 (超过会抛出异常) |
+
+**错误响应示例:**
+
+```json
+// 缺少必填浮点数参数
+{
+  "statusCode": 400,
+  "message": "latitude 是必填项，请提供有效的数字",
+  "error": "Bad Request"
+}
+
+// 浮点数值无效
+{
+  "statusCode": 400,
+  "message": "longitude 必须是有效的数字",
+  "error": "Bad Request"
+}
+
+// 浮点数超出范围
+{
+  "statusCode": 400,
+  "message": "latitude 不能大于 90",
+  "error": "Bad Request"
+}
+
+// 精度超出限制
+{
+  "statusCode": 400,
+  "message": "accuracy 最多保留 6 位小数",
+  "error": "Bad Request"
+}
+```
+
+**使用场景:**
+
+| 场景 | 示例 | 说明 |
+|------|------|------|
+| GPS 坐标 | `?lat=31.2304&lng=121.4737` | 经纬度坐标 (需范围验证) |
+| 测量数据 | `?temperature=23.5` | 水温、盐度等科学测量值 |
+| 距离/半径 | `?radius=5.5` | 搜索半径、距离计算 |
+| 百分比 | `?confidence=0.95` | 置信度、概率值 (0-1 范围) |
+
+**ParseFloatPipe vs ParseOptionalFloatPipe:**
+
+| 管道 | 必填/可选 | 空值处理 | 使用场景 |
+|------|----------|----------|----------|
+| `ParseFloatPipe` | 必填 | 抛出异常 | 必须提供的浮点数参数 (如坐标) |
+| `ParseOptionalFloatPipe` | 可选 | 返回 `undefined` 或默认值 | 可选的筛选条件 (如最小/最大过滤值) |
+
 待实现:
 
 - 自定义业务验证管道 (根据业务需求扩展)
@@ -1275,6 +1369,7 @@ getProfile(@CurrentUser() user: User) {
 | 管道 | 用途 | 典型场景 |
 |------|------|----------|
 | `ParseIntPipe` | 必填整数 | 资源 ID、页码、数量限制 |
+| `ParseFloatPipe` | 必填浮点数 | GPS 坐标、测量数据、距离半径 |
 | `ParseOptionalIntPipe` | 可选整数 | 分页参数、数量限制 |
 | `ParseOptionalFloatPipe` | 可选浮点数 | 坐标、测量数据 |
 | `ParseOptionalBooleanPipe` | 可选布尔值 | 状态筛选 (true/false/1/0/yes/no) |
