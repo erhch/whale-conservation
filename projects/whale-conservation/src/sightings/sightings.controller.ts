@@ -19,6 +19,7 @@ import { AuthGuard } from '@nestjs/passport';
 
 import { SightingsService } from './sightings.service';
 import { Sighting } from './entities/sighting.entity';
+import { CreateSightingDto, UpdateSightingDto } from './dto';
 import { CacheInterceptor } from '../common/interceptors';
 import { ParseOptionalIntPipe } from '../common/pipes';
 
@@ -59,7 +60,7 @@ export class SightingsController {
   @ApiOperation({ summary: '创建新观测记录' })
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
-  async create(@Body() createSightingDto: any): Promise<Sighting> {
+  async create(@Body() createSightingDto: CreateSightingDto): Promise<Sighting> {
     return this.sightingsService.create(createSightingDto);
   }
 
@@ -67,7 +68,10 @@ export class SightingsController {
   @ApiOperation({ summary: '更新观测记录' })
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
-  async update(@Param('id') id: string, @Body() updateSightingDto: any): Promise<Sighting> {
+  async update(
+    @Param('id') id: string,
+    @Body() updateSightingDto: UpdateSightingDto,
+  ): Promise<Sighting> {
     return this.sightingsService.update(id, updateSightingDto);
   }
 
