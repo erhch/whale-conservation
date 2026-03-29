@@ -83,18 +83,11 @@ export class EnvironmentService {
    */
   async findByDateRange(
     stationId: string,
-    startDate: string,
-    endDate: string,
+    startDate: Date,
+    endDate: Date,
     limit: number = 100,
   ): Promise<EnvironmentLog[]> {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      throw new BadRequestException('Invalid date format. Use ISO 8601 format.');
-    }
-
-    if (start > end) {
+    if (startDate > endDate) {
       throw new BadRequestException('startDate must be before endDate');
     }
 
@@ -102,8 +95,8 @@ export class EnvironmentService {
       where: {
         station_id: stationId,
         recorded_at: {
-          $gte: start,
-          $lte: end,
+          $gte: startDate,
+          $lte: endDate,
         },
       },
       order: { recorded_at: 'ASC' },

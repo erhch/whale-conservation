@@ -12,11 +12,11 @@ import {
   Query,
   ParseUUIDPipe,
   ParseOptionalIntPipe,
-  ParseISO8601Pipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { EnvironmentService } from './environment.service';
 import { CreateEnvironmentDto } from './dto/create-environment.dto';
+import { ParseISO8601Pipe } from '@/common/pipes';
 
 @ApiTags('Environment - 环境日志')
 @Controller('api/v1/environment')
@@ -94,8 +94,8 @@ export class EnvironmentController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: '返回数量上限', example: 100 })
   async findByDateRange(
     @Param('stationId', new ParseUUIDPipe()) stationId: string,
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
+    @Query('startDate', new ParseISO8601Pipe()) startDate: Date,
+    @Query('endDate', new ParseISO8601Pipe()) endDate: Date,
     @Query('limit', new ParseOptionalIntPipe({ defaultValue: 100, min: 1, max: 1000 })) limit: number,
   ) {
     return this.environmentService.findByDateRange(stationId, startDate, endDate, limit);
