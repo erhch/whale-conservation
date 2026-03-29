@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Sighting } from './entities/sighting.entity';
+import { CreateSightingDto, UpdateSightingDto } from './dto';
 
 @Injectable()
 export class SightingsService {
@@ -51,12 +52,12 @@ export class SightingsService {
     return sighting;
   }
 
-  async create(createSightingDto: any): Promise<Sighting> {
+  async create(createSightingDto: CreateSightingDto): Promise<Sighting> {
     const sighting = this.sightingRepository.create(createSightingDto);
     return this.sightingRepository.save(sighting);
   }
 
-  async update(id: string, updateSightingDto: any): Promise<Sighting> {
+  async update(id: string, updateSightingDto: UpdateSightingDto): Promise<Sighting> {
     const sighting = await this.findOne(id);
     Object.assign(sighting, updateSightingDto);
     return this.sightingRepository.save(sighting);
