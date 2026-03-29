@@ -151,4 +151,136 @@ export class WhalesService {
 
     return { data: sightings, total, page, limit };
   }
+
+  /**
+   * 获取鲸鱼迁徙轨迹 (基于观测记录的时间和位置序列)
+   * @param whaleId 鲸鱼 ID
+   * @param days 回溯天数，默认 365 天
+   * @returns 迁徙轨迹数据，包含位置点序列和统计信息
+   */
+  async getMigrations(whaleId: string, days: number = 365): Promise<{
+    whaleId: string;
+    whaleName: string | null;
+    identifier: string;
+    species: string | null;
+    trackPoints: Array<{
+      observedAt: Date;
+      location: {
+        type: string;
+        coordinates: [number, number];
+      };
+      locationName: string | null;
+      stationName: string | null;
+      behavior: string | null;
+      groupSize: number | null;
+    }>;
+    summary: {
+      totalPoints: number;
+      dateRange: {
+        start: Date | null;
+        end: Date | null;
+      };
+      boundingBox: {
+        minLat: number | null;
+        maxLat: number | null;
+        minLng: number | null;
+        maxLng: number | null;
+      } | null;
+      distinctLocations: number;
+    };
+  }> {
+    // 验证鲸鱼是否存在
+    const whale = await this.whaleRepository.findOne({
+      where: { id: whaleId },
+      relations: ['species'],
+    });
+    if (!whale) {
+      throw new NotFoundException('鲸鱼个体不存在');
+    }
+
+    // 计算日期范围
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    // 查询观测记录，按时间正序排列 (迁徙轨迹需要从早到晚)
+    const sightings = await this.whaleRepository
+      .createQueryBuilder('whale')
+      .leftJoinAndSelect('whale.sightings', 'sighting')
+      .leftJoinAndSelect('sighting.station', 'station')
+      .where('whale.id = :whaleId', { whaleId })
+      .andWhere('sighting.observedAt >= :startDate', { startDate })
+      .andWhere('sighting.observedAt <= :endDate', { endDate })
+      .orderBy('sighting.observedAt', 'ASC')
+      .getMany();
+
+    // 提取轨迹点
+    const trackPoints: Array<{
+      observedAt: Date;
+      location: { type: string; coordinates: [number, number] };
+      locationName: string | null;
+      stationName: string | null;
+      behavior: string | null;
+      groupSize: number | null;
+    }> = [];
+
+    let minLat: number | null = null;
+    let maxLat: number | null = null;
+    let minLng: number | null = null;
+    let maxLng: number | null = null;
+    const locationSet = new Set<string>();
+
+    if (sightings.length > 0 && sightings[0].sightings) {
+      for (const sighting of sightings[0].sightings) {
+        if (sighting.location && sighting.location.coordinates) {
+          const [lng, lat] = sighting.location.coordinates;
+
+          // 更新边界框
+          if (minLat === null || lat < minLat) minLat = lat;
+          if (maxLat === null || lat > maxLat) maxLat = lat;
+          if (minLng === null || lng < minLng) minLng = lng;
+          if (maxLng === null || lng > maxLng) maxLng = lng;
+
+          // 记录不同位置数量 (基于坐标的近似去重)
+          const locKey = `${lat.toFixed(2)},${lng.toFixed(2)}`;
+          locationSet.add(locKey);
+
+          trackPoints.push({
+            observedAt: sighting.observedAt,
+            location: {
+              type: 'Point',
+              coordinates: [lng, lat],
+            },
+            locationName: sighting.locationName || null,
+            stationName: sighting.station?.name || null,
+            behavior: sighting.behavior || null,
+            groupSize: sighting.groupSize || null,
+          });
+        }
+      }
+    }
+
+    // 计算日期范围
+    const dateRange = {
+      start: trackPoints.length > 0 ? trackPoints[0].observedAt : null,
+      end: trackPoints.length > 0 ? trackPoints[trackPoints.length - 1].observedAt : null,
+    };
+
+    return {
+      whaleId,
+      whaleName: whale.name,
+      identifier: whale.identifier,
+      species: whale.species?.commonName?.zh || whale.species?.scientificName || null,
+      trackPoints,
+      summary: {
+        totalPoints: trackPoints.length,
+        dateRange,
+        boundingBox:
+          trackPoints.length > 0
+            ? { minLat, maxLat, minLng, maxLng }
+            : null,
+        distinctLocations: locationSet.size,
+      },
+    };
+  }
 }

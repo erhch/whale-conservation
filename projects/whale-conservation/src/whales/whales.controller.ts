@@ -106,4 +106,21 @@ export class WhalesController {
       endDate: endDate ? new Date(endDate) : undefined,
     });
   }
+
+  @Get(':id/migrations')
+  @ApiOperation({ summary: '获取鲸鱼迁徙轨迹 (基于观测记录的时间和位置序列)' })
+  @ApiQuery({
+    name: 'days',
+    required: false,
+    type: Number,
+    description: '回溯天数，默认 365 天，最大 730 天',
+    example: 365,
+  })
+  @UseInterceptors(CacheInterceptor)
+  async getMigrations(
+    @Param('id') id: string,
+    @Query('days', new ParseOptionalIntPipe({ defaultValue: 365, min: 1, max: 730 })) days: number,
+  ): Promise<any> {
+    return this.whalesService.getMigrations(id, days);
+  }
 }
