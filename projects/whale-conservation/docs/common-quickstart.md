@@ -2,7 +2,7 @@
 
 > 鲸创管理系统 - 公共工具模块快速上手指南
 
-版本：v0.1.3  
+版本：v0.1.4  
 最后更新：2026-03-29
 
 ---
@@ -17,7 +17,7 @@
 |------|------|----------|
 | **Filters** | 统一异常处理 | 全局错误响应格式化 |
 | **Guards** | JWT 认证 + RBAC 权限 | 接口安全控制 |
-| **Interceptors** | 日志/缓存/超时/响应转换/ETag | 横切关注点统一处理 |
+| **Interceptors** | 日志/缓存/超时/响应转换/ETag/速率限制 | 横切关注点统一处理 |
 | **Pipes** | 参数验证与转换 | Query/Body 参数解析 |
 | **Decorators** | @Public/@Roles/@CurrentUser | 路由元数据标记 |
 
@@ -416,7 +416,115 @@ GET /api/v1/whales?limit=500
 # 响应：400 Bad Request - 每页数量不能超过 100
 ```
 
-**注意:** 速率限制 (Rate Limiting) 的详细文档已在 `src/common/README.md` 中说明。
+---
+
+### 🛡️ 场景 12: 请求速率限制 (RateLimitInterceptor)
+
+使用 `RateLimitInterceptor` 限制 API 请求频率，防止滥用和 DDoS 攻击。
+
+```typescript
+import { UseInterceptors } from '@nestjs/common';
+import { RateLimitInterceptor, RateLimit, RateLimitTTL } from '@/common/interceptors';
+
+@Controller('auth')
+export class AuthController {
+  // 基础用法 - 默认 100 次/分钟
+  @UseInterceptors(RateLimitInterceptor)
+  @Get('public-data')
+  getPublicData() {
+    return this.publicService.getData();
+  }
+  
+  // 严格限制 - 10 次/分钟 (适合登录等敏感操作)
+  @UseInterceptors(RateLimitInterceptor)
+  @RateLimit(10)
+  @RateLimitTTL(60)
+  @Post('login')
+  login(@Body() dto: LoginDto) {
+    return this.authService.login(dto);
+  }
+  
+  // 宽松限制 - 1000 次/分钟 (适合公开数据查询)
+  @UseInterceptors(RateLimitInterceptor)
+  @RateLimit(1000)
+  @RateLimitTTL(60)
+  @Get('species')
+  findAllSpecies() {
+    return this.speciesService.findAll();
+  }
+  
+  // 超严格限制 - 5 次/分钟 (适合密码重置等)
+  @UseInterceptors(RateLimitInterceptor)
+  @RateLimit(5)
+  @RateLimitTTL(60)
+  @Post('reset-password')
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
+  }
+}
+```
+
+**装饰器说明:**
+
+| 装饰器 | 说明 | 参数 |
+|--------|------|------|
+| `@RateLimit(limit)` | 设置最大请求次数 | `limit: number` - 时间窗口内最大请求数 |
+| `@RateLimitTTL(ttl)` | 设置时间窗口 | `ttl: number` - 时间窗口 (秒) |
+
+**默认配置:**
+
+- 默认限制：100 次/分钟
+- 默认时间窗口：60 秒
+- 限制维度：按客户端 IP + 路由区分
+
+**超出限制的响应:**
+
+```json
+{
+  "statusCode": 429,
+  "timestamp": "2026-03-29T15:00:00.000Z",
+  "path": "/api/v1/auth/login",
+  "message": "请求过于频繁，请 45 秒后重试",
+  "error": "Too Many Requests",
+  "description": "限制：10 次/60 秒"
+}
+```
+
+**典型场景推荐配置:**
+
+| 场景 | 限制 | 说明 |
+|------|------|------|
+| 登录/注册 | 10 次/分钟 | 防止暴力破解 |
+| 密码重置 | 5 次/分钟 | 防止滥用 |
+| 公开数据查询 | 100-1000 次/分钟 | 宽松限制 |
+| 敏感操作 (支付/删除) | 20 次/分钟 | 中等限制 |
+| 文件上传 | 10 次/分钟 | 防止资源耗尽 |
+
+**与缓存拦截器配合使用:**
+
+```typescript
+// 同时启用缓存和速率限制
+@UseInterceptors(CacheInterceptor, RateLimitInterceptor)
+@RateLimit(500)     // 500 次/分钟
+@RateLimitTTL(60)
+@Get('species')
+findAllSpecies() {
+  return this.speciesService.findAll();
+}
+```
+
+**优势:**
+
+- ✅ **防止暴力破解** - 限制登录/密码重置等敏感操作
+- ✅ **防止 DDoS** - 限制单个 IP 的请求频率
+- ✅ **保护资源** - 防止恶意请求耗尽服务器资源
+- ✅ **简单易用** - 内存存储，无需额外依赖
+
+**注意:** 
+
+- 当前使用内存存储，适合单机部署
+- 集群部署建议使用 Redis 等外部存储
+- 速率限制基于客户端 IP，注意反向代理场景
 
 ---
 
@@ -460,6 +568,7 @@ GET /api/v1/whales?limit=500
 3. **列表查询使用缓存** - 减少数据库压力
 4. **写操作后清除缓存** - 保证数据一致性
 5. **长任务设置超时** - 防止资源阻塞
+6. **敏感接口使用速率限制** - 登录/密码重置等防止暴力破解
 
 ### ⚠️ 注意事项
 
@@ -467,6 +576,7 @@ GET /api/v1/whales?limit=500
 2. **缓存清除顺序** - 先执行数据库操作，再清除缓存
 3. **敏感数据不缓存** - 用户信息、密码等不应缓存
 4. **超时时间合理** - 根据业务场景设置，避免过短或过长
+5. **速率限制配置** - 根据接口敏感度调整限制次数，避免误伤正常用户
 
 ---
 
