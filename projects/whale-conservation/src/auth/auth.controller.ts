@@ -11,15 +11,18 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Query,
+  ParseIntPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
+import { Roles } from '@common/decorators/roles.decorator';
 
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto, ChangePasswordDto } from './dto';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -72,5 +75,27 @@ export class AuthController {
   @ApiResponse({ status: 400, description: '当前密码错误或新密码不合规' })
   async changePassword(@CurrentUser() user: User, @Body() changePasswordDto: ChangePasswordDto) {
     return this.authService.changePassword(user.id, changePasswordDto);
+  }
+
+  @Get('users')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '获取用户列表 (管理员专用)' })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  @Roles(UserRole.ADMIN)
+  @ApiQuery({ name: 'page', required: false, type: Number, description: '页码，默认 1', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: '每页数量，默认 10，最大 100', example: 10 })
+  @ApiQuery({ name: 'role', required: false, enum: UserRole, description: '按角色筛选' })
+  @ApiQuery({ name: 'isActive', required: false, type: Boolean, description: '按激活状态筛选' })
+  @ApiResponse({ status: 200, description: '获取成功' })
+  @ApiResponse({ status: 403, description: '权限不足，仅限管理员' })
+  async findAllUsers(
+    @Query('page', new ParseIntPipe({ optional: true, defaultValue: 1 })) page: number,
+    @Query('limit', new ParseIntPipe({ optional: true, defaultValue: 10 })) limit: number,
+    @Query('role') role?: UserRole,
+    @Query('isActive') isActive?: boolean,
+  ) {
+    const safeLimit = Math.min(limit, 100);
+    return this.authService.findAllUsers(page, safeLimit, role, isActive);
   }
 }

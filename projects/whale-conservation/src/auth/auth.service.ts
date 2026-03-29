@@ -171,6 +171,36 @@ export class AuthService {
   }
 
   /**
+   * 获取用户列表 (管理员专用)
+   */
+  async findAllUsers(page: number = 1, limit: number = 10, role?: UserRole, isActive?: boolean) {
+    const queryBuilder = this.userRepository.createQueryBuilder('user');
+
+    // 筛选条件
+    if (role) {
+      queryBuilder.andWhere('user.role = :role', { role });
+    }
+    if (isActive !== undefined) {
+      queryBuilder.andWhere('user.isActive = :isActive', { isActive });
+    }
+
+    // 分页
+    queryBuilder.orderBy('user.createdAt', 'DESC').skip((page - 1) * limit).take(limit);
+
+    const [users, total] = await queryBuilder.getManyAndCount();
+
+    return {
+      data: users.map((user) => this.sanitizeUser(user)),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
    * 清理敏感信息
    */
   private sanitizeUser(user: User) {

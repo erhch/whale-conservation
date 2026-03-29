@@ -146,6 +146,63 @@ Authorization: Bearer <token>
 }
 ```
 
+### 6. 获取用户列表 (管理员专用)
+
+```typescript
+GET /api/v1/auth/users?page=1&limit=10&role=admin&isActive=true
+Authorization: Bearer <admin-token>
+```
+
+**查询参数:**
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `page` | number | 1 | 页码 |
+| `limit` | number | 10 | 每页数量 (最大 100) |
+| `role` | UserRole | - | 按角色筛选 (admin/researcher/volunteer/public) |
+| `isActive` | boolean | - | 按激活状态筛选 |
+
+**响应示例:**
+
+```json
+{
+  "data": [
+    {
+      "id": "usr_abc123",
+      "username": "admin",
+      "email": "admin@example.com",
+      "nickname": "管理员",
+      "role": "admin",
+      "isActive": true,
+      "lastLoginAt": "2026-03-29T10:00:00.000Z",
+      "lastLoginIp": "192.168.1.100",
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-03-29T10:00:00.000Z"
+    },
+    {
+      "id": "usr_def456",
+      "username": "researcher1",
+      "email": "researcher@example.com",
+      "nickname": "研究员 A",
+      "role": "researcher",
+      "isActive": true,
+      "lastLoginAt": "2026-03-28T14:30:00.000Z",
+      "lastLoginIp": "192.168.1.101",
+      "createdAt": "2026-01-15T08:00:00.000Z",
+      "updatedAt": "2026-03-28T14:30:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 25,
+    "totalPages": 3
+  }
+}
+```
+
+**权限要求:** 仅限 `admin` 角色访问
+
 ## 🛡️ 权限控制
 
 ### 角色定义
@@ -400,9 +457,11 @@ async fetchSpecies() {
 - [ ] 登录日志与异常检测
 - [ ] OAuth2 第三方登录 (GitHub/Google)
 - [ ] API Key 支持 (服务端对服务端认证)
+- [x] 用户列表管理 (管理员专用) - ✅ 已实现 `GET /auth/users` 端点
 
 ## 📋 更新日志
 
+- **2026-03-29**: 新增用户列表接口 (`GET /auth/users`) - 管理员专用，支持分页和筛选
 - **2026-03-29**: 新增修改密码接口 (`POST /auth/change-password`)
 
 ## 📚 相关文档
