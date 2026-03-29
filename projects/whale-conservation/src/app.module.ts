@@ -14,6 +14,7 @@ import { SightingsModule } from './sightings/sightings.module';
 import { StationsModule } from './stations/stations.module';
 import { StatsModule } from './stats/stats.module';
 import { HealthModule } from './health/health.module';
+import { EnvironmentModule } from './environment/environment.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { HealthModule } from './health/health.module';
     StationsModule,
     StatsModule,
     HealthModule,
+    EnvironmentModule,
   ],
 })
 export class AppModule {}
