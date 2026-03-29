@@ -114,4 +114,43 @@ export class StationsService {
       .orderBy('station.createdAt', 'DESC')
       .getMany();
   }
+
+  /**
+   * 获取站点统计信息 - 按类型和状态分组统计
+   */
+  async getStats(): Promise<{
+    total: number;
+    byType: Record<string, number>;
+    byStatus: Record<string, number>;
+  }> {
+    const total = await this.stationRepository.count();
+
+    // 按类型统计
+    const byTypeRaw = await this.stationRepository
+      .createQueryBuilder('station')
+      .select('station.type', 'type')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('station.type')
+      .getRawMany();
+
+    const byType: Record<string, number> = {};
+    byTypeRaw.forEach((row) => {
+      byType[row.type] = parseInt(row.count, 10);
+    });
+
+    // 按状态统计
+    const byStatusRaw = await this.stationRepository
+      .createQueryBuilder('station')
+      .select('station.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('station.status')
+      .getRawMany();
+
+    const byStatus: Record<string, number> = {};
+    byStatusRaw.forEach((row) => {
+      byStatus[row.status] = parseInt(row.count, 10);
+    });
+
+    return { total, byType, byStatus };
+  }
 }

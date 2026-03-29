@@ -70,6 +70,19 @@ export class StationsController {
     return this.stationsService.search(query);
   }
 
+  @Get('stats')
+  @Public()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(300)
+  @ApiOperation({ summary: '获取站点统计信息 (按类型和状态分组)' })
+  async getStats(): Promise<{
+    total: number;
+    byType: Record<string, number>;
+    byStatus: Record<string, number>;
+  }> {
+    return this.stationsService.getStats();
+  }
+
   @Get(':id')
   @Public()
   @UseInterceptors(CacheInterceptor)

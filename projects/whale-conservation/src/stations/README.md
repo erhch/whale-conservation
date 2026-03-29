@@ -12,6 +12,7 @@
 | 获取单个站点 | `GET /api/v1/stations/:id` | ❌ 公开 | ✅ 5 分钟 |
 | 获取活跃站点 | `GET /api/v1/stations/active` | ❌ 公开 | ✅ 5 分钟 |
 | 搜索站点 | `GET /api/v1/stations/search?q=关键词` | ❌ 公开 | ✅ 5 分钟 |
+| 获取统计信息 | `GET /api/v1/stations/stats` | ❌ 公开 | ✅ 5 分钟 |
 | 创建站点 | `POST /api/v1/stations` | ✅ JWT | ❌ |
 | 更新站点 | `PUT /api/v1/stations/:id` | ✅ JWT | ❌ |
 | 删除站点 | `DELETE /api/v1/stations/:id` | ✅ JWT | ❌ |
@@ -179,6 +180,49 @@ curl -X GET "http://localhost:3000/api/v1/stations/search?q=上海"
 - 搜索字段：`name` (站点名称)、`code` (站点代码)、`location` (位置描述)
 - 不区分大小写
 - 空查询返回空数组
+
+### 获取统计信息 (公开)
+
+获取站点统计摘要，包括总数、按类型分组计数、按状态分组计数。适用于仪表板展示。
+
+```bash
+curl -X GET "http://localhost:3000/api/v1/stations/stats"
+```
+
+**响应格式:**
+
+```json
+{
+  "total": 15,
+  "byType": {
+    "fixed": 8,
+    "mobile": 4,
+    "vessel": 3
+  },
+  "byStatus": {
+    "active": 12,
+    "inactive": 2,
+    "maintenance": 1
+  }
+}
+```
+
+**字段说明:**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `total` | number | 站点总数 |
+| `byType.fixed` | number | 固定站点数量 |
+| `byType.mobile` | number | 移动站点数量 |
+| `byType.vessel` | number | 船只站点数量 |
+| `byStatus.active` | number | 运行中站点数量 |
+| `byStatus.inactive` | number | 停用站点数量 |
+| `byStatus.maintenance` | number | 维护中站点数量 |
+
+**使用场景:**
+- 管理后台仪表板数据概览
+- 前端统计图表数据源
+- 快速了解站点分布情况
 
 ### 获取单个站点详情 (公开)
 
@@ -464,4 +508,4 @@ environmentLogs: EnvironmentLog[];
 ---
 
 **最后更新:** 2026-03-29  
-**模块状态:** ✅ 完成 (分页 + 筛选 + 缓存 + 活跃站点查询)
+**模块状态:** ✅ 完成 (分页 + 筛选 + 缓存 + 活跃站点查询 + 统计信息)
