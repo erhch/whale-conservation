@@ -20,13 +20,13 @@ common/
 | 文件 | 说明 |
 |------|------|
 | `http-exception.filter.ts` | 统一格式化 HTTP 异常响应 |
-| `AllExceptionsFilter` | 捕获所有未处理的异常 |
+| `index.ts` | 统一导出 (推荐使用 `import { HttpExceptionFilter } from '@/common/filters'`) |
 
 **使用示例:**
 
 ```typescript
 // main.ts
-app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
+app.useGlobalFilters(new HttpExceptionFilter());
 ```
 
 **统一错误响应格式:**
@@ -47,6 +47,7 @@ app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 
 - `JwtAuthGuard` - JWT 认证守卫 (支持 @Public() 装饰器跳过认证)
 - `RolesGuard` - RBAC 角色权限守卫 (配合 @Roles() 装饰器使用)
+- `index.ts` - 统一导出 (推荐使用 `import { JwtAuthGuard, RolesGuard } from '@/common/guards'`)
 
 待实现:
 
