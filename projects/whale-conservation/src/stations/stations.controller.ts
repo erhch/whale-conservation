@@ -60,6 +60,16 @@ export class StationsController {
     return this.stationsService.findActive();
   }
 
+  @Get('search')
+  @Public()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(300)
+  @ApiOperation({ summary: '搜索站点 (按名称/代码/位置模糊搜索)' })
+  @ApiQuery({ name: 'q', required: true, type: String, description: '搜索关键词', example: '长江' })
+  async search(@Query('q') query: string): Promise<Station[]> {
+    return this.stationsService.search(query);
+  }
+
   @Get(':id')
   @Public()
   @UseInterceptors(CacheInterceptor)

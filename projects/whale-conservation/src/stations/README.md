@@ -11,6 +11,7 @@
 | 获取站点列表 | `GET /api/v1/stations` | ❌ 公开 | ✅ 5 分钟 |
 | 获取单个站点 | `GET /api/v1/stations/:id` | ❌ 公开 | ✅ 5 分钟 |
 | 获取活跃站点 | `GET /api/v1/stations/active` | ❌ 公开 | ✅ 5 分钟 |
+| 搜索站点 | `GET /api/v1/stations/search?q=关键词` | ❌ 公开 | ✅ 5 分钟 |
 | 创建站点 | `POST /api/v1/stations` | ✅ JWT | ❌ |
 | 更新站点 | `PUT /api/v1/stations/:id` | ✅ JWT | ❌ |
 | 删除站点 | `DELETE /api/v1/stations/:id` | ✅ JWT | ❌ |
@@ -133,6 +134,51 @@ curl -X GET "http://localhost:3000/api/v1/stations/active"
   }
 ]
 ```
+
+### 搜索站点 (公开)
+
+支持按站点名称、代码或位置描述进行模糊搜索。
+
+```bash
+# 搜索名称包含"长江"的站点
+curl -X GET "http://localhost:3000/api/v1/stations/search?q=长江"
+
+# 搜索代码包含"ST001"的站点
+curl -X GET "http://localhost:3000/api/v1/stations/search?q=ST001"
+
+# 搜索位置包含"上海"的站点
+curl -X GET "http://localhost:3000/api/v1/stations/search?q=上海"
+```
+
+**响应格式:**
+
+```json
+[
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "code": "ST001",
+    "name": "长江口监测站",
+    "type": "fixed",
+    "status": "active",
+    "latitude": 31.2304,
+    "longitude": 121.4737,
+    "location": "上海市浦东新区长江入海口",
+    "depth": 15.5,
+    "installedAt": "2024-01-15T08:30:00.000Z",
+    "responsiblePerson": "张三",
+    "contactPhone": "13800138000",
+    "equipment": "{\"cameras\": 2, \"sensors\": 5}",
+    "createdAt": "2024-01-15T08:30:00.000Z",
+    "updatedAt": "2024-01-15T08:30:00.000Z"
+  }
+]
+```
+
+**搜索规则:**
+- 支持模糊匹配 (LIKE 查询)
+- 搜索字段：`name` (站点名称)、`code` (站点代码)、`location` (位置描述)
+- 不区分大小写
+- 空查询返回空数组
 
 ### 获取单个站点详情 (公开)
 

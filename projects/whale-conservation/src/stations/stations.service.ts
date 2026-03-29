@@ -95,4 +95,23 @@ export class StationsService {
       where: { status: 'active' },
     });
   }
+
+  /**
+   * 搜索站点 - 支持按名称或代码模糊搜索
+   */
+  async search(query: string): Promise<Station[]> {
+    if (!query || query.trim().length === 0) {
+      return [];
+    }
+
+    const searchTerm = `%${query.trim()}%`;
+
+    return this.stationRepository
+      .createQueryBuilder('station')
+      .where('station.name LIKE :term', { term: searchTerm })
+      .orWhere('station.code LIKE :term', { term: searchTerm })
+      .orWhere('station.location LIKE :term', { term: searchTerm })
+      .orderBy('station.createdAt', 'DESC')
+      .getMany();
+  }
 }
