@@ -1,1 +1,1 @@
-export { HttpExceptionFilter } from './http-exception.filter';
+export { HttpExceptionFilter, AllExceptionsFilter, type ErrorResponse } from './http-exception.filter';

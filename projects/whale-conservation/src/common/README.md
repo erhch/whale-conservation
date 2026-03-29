@@ -20,13 +20,32 @@ common/
 | 文件 | 说明 |
 |------|------|
 | `http-exception.filter.ts` | 统一格式化 HTTP 异常响应 |
-| `index.ts` | 统一导出 (推荐使用 `import { HttpExceptionFilter } from '@/common/filters'`) |
+| `index.ts` | 统一导出 (推荐使用 `import { HttpExceptionFilter, AllExceptionsFilter } from '@/common/filters'`) |
 
 **使用示例:**
 
 ```typescript
 // main.ts
-app.useGlobalFilters(new HttpExceptionFilter());
+import { HttpExceptionFilter, AllExceptionsFilter } from '@/common/filters';
+
+app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
+```
+
+**过滤器说明:**
+
+- `HttpExceptionFilter` - 捕获并格式化 HTTP 异常 (HttpException 及其子类)
+- `AllExceptionsFilter` - 捕获所有未处理的异常，作为最后一道防线
+
+**统一错误响应格式:**
+
+```json
+{
+  "statusCode": 404,
+  "timestamp": "2026-03-27T13:30:00.000Z",
+  "path": "/api/v1/whales/999",
+  "message": "鲸鱼个体不存在",
+  "error": "Not Found"
+}
 ```
 
 **统一错误响应格式:**
