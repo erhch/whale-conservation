@@ -105,4 +105,22 @@ export class SightingsController {
   }> {
     return this.sightingsService.getStatistics({ startDate, endDate, whaleId, stationId });
   }
+
+  @Get('export/csv')
+  @ApiOperation({ summary: '导出观测记录为 CSV 文件' })
+  @ApiQuery({ name: 'startDate', required: false, type: Date, description: '开始日期' })
+  @ApiQuery({ name: 'endDate', required: false, type: Date, description: '结束日期' })
+  @ApiQuery({ name: 'whaleId', required: false, type: String, description: '鲸鱼 ID 筛选' })
+  @ApiQuery({ name: 'stationId', required: false, type: String, description: '观测站 ID 筛选' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: '最大导出数量 (默认 1000，最大 1000)', example: 1000 })
+  async exportCSV(
+    @Query('startDate') startDate?: Date,
+    @Query('endDate') endDate?: Date,
+    @Query('whaleId') whaleId?: string,
+    @Query('stationId') stationId?: string,
+    @Query('limit', new ParseOptionalIntPipe({ defaultValue: 1000, min: 1, max: 1000 })) limit?: number,
+  ) {
+    const csv = await this.sightingsService.exportToCSV({ startDate, endDate, whaleId, stationId, limit });
+    return csv;
+  }
 }

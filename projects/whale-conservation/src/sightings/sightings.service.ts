@@ -171,4 +171,105 @@ export class SightingsService {
       })),
     };
   }
+
+  /**
+   * 导出观测记录为 CSV 格式
+   * @param options 导出选项
+   * @returns CSV 字符串
+   */
+  async exportToCSV(options?: {
+    startDate?: Date;
+    endDate?: Date;
+    whaleId?: string;
+    stationId?: string;
+    limit?: number;
+  }): Promise<string> {
+    const queryBuilder = this.sightingRepository.createQueryBuilder('sighting')
+      .leftJoinAndSelect('sighting.whale', 'whale')
+      .leftJoinAndSelect('sighting.station', 'station')
+      .leftJoinAndSelect('sighting.observer', 'observer')
+      .orderBy('sighting.observedAt', 'DESC');
+
+    // 筛选条件
+    if (options?.startDate) {
+      queryBuilder.andWhere('sighting.observedAt >= :startDate', { startDate: options.startDate });
+    }
+    if (options?.endDate) {
+      queryBuilder.andWhere('sighting.observedAt <= :endDate', { endDate: options.endDate });
+    }
+    if (options?.whaleId) {
+      queryBuilder.andWhere('sighting.whaleId = :whaleId', { whaleId: options.whaleId });
+    }
+    if (options?.stationId) {
+      queryBuilder.andWhere('sighting.stationId = :stationId', { stationId: options.stationId });
+    }
+
+    // 限制导出数量 (默认最大 1000 条)
+    const limit = Math.min(options?.limit || 1000, 1000);
+    queryBuilder.take(limit);
+
+    const sightings = await queryBuilder.getMany();
+
+    // CSV 头部
+    const headers = [
+      'ID',
+      '观测时间',
+      '鲸鱼编号',
+      '鲸鱼昵称',
+      '物种名称',
+      '站点名称',
+      '观测者',
+      '纬度',
+      '经度',
+      '地点名称',
+      '行为',
+      '群体数量',
+      '天气',
+      '海况等级',
+      '备注',
+      '照片数量',
+      '是否验证',
+      '创建时间',
+    ];
+
+    // CSV 行数据
+    const rows = sightings.map((s) => [
+      s.id,
+      s.observedAt.toISOString(),
+      s.whale?.identifier || '',
+      s.whale?.name || '',
+      s.whale?.species?.commonNameZh || '',
+      s.station?.name || '',
+      s.observer?.name || '',
+      s.latitude.toString(),
+      s.longitude.toString(),
+      s.locationName || '',
+      s.behavior || '',
+      s.groupSize?.toString() || '',
+      s.weather || '',
+      s.seaState?.toString() || '',
+      s.notes || '',
+      s.photoUrls?.length.toString() || '0',
+      s.isVerified ? '是' : '否',
+      s.createdAt.toISOString(),
+    ]);
+
+    // 构建 CSV 内容
+    const csvRows = [headers.join(',')];
+    for (const row of rows) {
+      csvRows.push(
+        row
+          .map((cell) => {
+            // 处理包含逗号、引号或换行的字段
+            if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+              return `"${cell.replace(/"/g, '""')}"`;
+            }
+            return cell;
+          })
+          .join(','),
+      );
+    }
+
+    return csvRows.join('\n');
+  }
 }

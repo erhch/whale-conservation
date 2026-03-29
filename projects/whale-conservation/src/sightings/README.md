@@ -367,7 +367,73 @@ curl -X DELETE "http://localhost:3000/api/v1/sightings/550e8400-e29b-41d4-a716-4
 
 ---
 
-### 7. 获取观测统计概览 (新增)
+### 7. 导出观测记录为 CSV (新增)
+
+```http
+GET /api/v1/sightings/export/csv
+```
+
+**查询参数:**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `startDate` | Date | 否 | 开始日期 (ISO 8601) |
+| `endDate` | Date | 否 | 结束日期 (ISO 8601) |
+| `whaleId` | UUID | 否 | 按鲸鱼 ID 筛选 |
+| `stationId` | UUID | 否 | 按站点 ID 筛选 |
+| `limit` | number | 否 | 最大导出数量，默认 1000，最大 1000 |
+
+**响应格式:** `text/csv`
+
+**CSV 字段说明:**
+
+| 字段 | 说明 |
+|------|------|
+| `ID` | 观测记录 UUID |
+| `观测时间` | 观测发生时间 (ISO 8601) |
+| `鲸鱼编号` | 鲸鱼个体编号 (如 BCX001) |
+| `鲸鱼昵称` | 鲸鱼昵称 (如大白) |
+| `物种名称` | 物种中文名 (如座头鲸) |
+| `站点名称` | 监测站点名称 |
+| `观测者` | 观测者姓名 |
+| `纬度` | 观测点纬度 |
+| `经度` | 观测点经度 |
+| `地点名称` | 地点名称 |
+| `行为` | 鲸鱼行为描述 |
+| `群体数量` | 观测到的群体数量 |
+| `天气` | 天气状况 |
+| `海况等级` | Douglas 海况等级 (0-9) |
+| `备注` | 详细备注 |
+| `照片数量` | 关联照片数量 |
+| `是否验证` | 数据验证状态 (是/否) |
+| `创建时间` | 记录创建时间 (ISO 8601) |
+
+**cURL 示例:**
+
+```bash
+# 导出全部记录 (默认前 1000 条)
+curl -X GET "http://localhost:3000/api/v1/sightings/export/csv" -o sightings.csv
+
+# 按日期范围导出
+curl -X GET "http://localhost:3000/api/v1/sightings/export/csv?startDate=2026-03-01&endDate=2026-03-31" -o march-sightings.csv
+
+# 导出特定鲸鱼的观测记录
+curl -X GET "http://localhost:3000/api/v1/sightings/export/csv?whaleId=123e4567-e89b-12d3-a456-426614174000" -o whale-bcx001.csv
+
+# 导出特定站点的数据
+curl -X GET "http://localhost:3000/api/v1/sightings/export/csv?stationId=987fcdeb-51a2-43d1-b890-123456789abc&limit=500" -o station-data.csv
+```
+
+**使用场景:**
+
+- 📊 **数据分析** - 导出到 Excel/SPSS/R 进行统计分析
+- 📋 **报告生成** - 用于月度/年度观测报告
+- 🗄️ **数据备份** - 定期导出备份观测数据
+- 🔬 **研究协作** - 与研究机构共享观测数据
+
+---
+
+### 8. 获取观测统计概览 (新增)
 
 ```http
 GET /api/v1/sightings/stats/overview
@@ -679,7 +745,7 @@ async create(createSightingDto: CreateSightingDto) {
 - [ ] 观测记录审核工作流
 - [ ] 照片上传接口集成
 - [ ] 地理位置验证 (海洋区域检查)
-- [ ] 观测数据导出 (CSV/GeoJSON)
+- [x] 观测数据导出 (CSV/GeoJSON) - ✅ 已实现 `/export/csv` 端点
 - [ ] 迁徙轨迹分析 API
 - [x] 观测热度统计 (按时间/地点) - ✅ 已实现 `/stats/overview` 端点
 
