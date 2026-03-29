@@ -508,6 +508,7 @@ getStatistics() {
 - `ParseISO8601Pipe` - 必填 ISO 8601 日期解析管道 (支持范围验证)
 - `ParseUUIDPipe` - UUID 格式验证管道 (支持版本验证、必填/可选模式)
 - `ParseBooleanPipe` - 必填布尔值解析管道 (支持多种格式：true/false/1/0/yes/no/on/off)
+- `ParseEmailPipe` - 邮箱格式验证管道 (支持必填/可选模式、自动转小写)
 
 **使用示例:**
 
@@ -936,6 +937,86 @@ findAll(
 | `ParseBooleanPipe` | 必填 | 抛出异常 | 必须明确指定的布尔开关 |
 | `ParseOptionalBooleanPipe` | 可选 | 返回 `undefined` 或默认值 | 可选的筛选条件 |
 
+### 📁 Pipes (管道) - ParseEmailPipe
+
+**ParseEmailPipe 使用示例:**
+
+```typescript
+import { ParseEmailPipe } from '@/common/pipes';
+
+// 必填邮箱 - 基础用法
+@Body('email', new ParseEmailPipe())
+email: string;
+
+@Query('contactEmail', new ParseEmailPipe())
+contactEmail: string;
+
+// 可选邮箱 - 允许 undefined
+@Query('backupEmail', new ParseEmailPipe({ required: false }))
+backupEmail?: string;
+
+// 在 Controller 中组合使用
+@Post('users')
+createUser(
+  @Body('email', new ParseEmailPipe()) email: string,
+  @Body('name', new ParseOptionalStringPipe({ minLength: 2, maxLength: 50 })) name: string,
+  @Query('backupEmail', new ParseEmailPipe({ required: false })) backupEmail?: string,
+) {
+  return this.usersService.create({ email, name, backupEmail });
+}
+```
+
+**ParseEmailOptions 选项:**
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `required` | `boolean` | `true` | 是否必填，`false` 时允许空值并返回 `undefined` |
+
+**验证规则:**
+
+| 规则 | 说明 |
+|------|------|
+| 格式验证 | 符合 RFC 5322 标准的邮箱格式 |
+| 自动转换 | 自动转为小写并去除首尾空格 |
+| 支持格式 | `user@domain.com`, `user.name+tag@domain.co.uk` 等 |
+| 不支持 | 纯 IP 地址邮箱、带中文的邮箱 |
+
+**错误响应示例:**
+
+```json
+// 必填项为空
+{
+  "statusCode": 400,
+  "message": "邮箱地址是必填项，请提供有效的邮箱地址",
+  "error": "Bad Request"
+}
+
+// 无效的邮箱格式
+{
+  "statusCode": 400,
+  "message": "invalid-email 不是有效的邮箱地址格式",
+  "error": "Bad Request"
+}
+```
+
+**使用场景:**
+
+| 场景 | 示例 | 说明 |
+|------|------|------|
+| 用户注册 | `POST /users` | 验证注册邮箱格式 |
+| 联系方式 | `POST /contact` | 验证联系邮箱 |
+| 通知设置 | `PUT /notifications` | 验证通知邮箱 |
+| 备用邮箱 | `PUT /profile` | 可选的备用邮箱字段 |
+
+**邮箱格式示例:**
+
+| 有效邮箱 | 无效邮箱 | 说明 |
+|---------|---------|------|
+| `user@example.com` | `user@example` | 缺少顶级域名 |
+| `user.name@example.com` | `user@.com` | 缺少域名 |
+| `user+tag@example.co.uk` | `user name@example.com` | 包含空格 |
+| `user123@test.org` | `user@example.c` | 顶级域名过短 |
+
 ### 📁 Pipes (管道) - ParseIntPipe
 
 **ParseIntPipe 使用示例:**
@@ -1100,6 +1181,7 @@ getProfile(@CurrentUser() user: User) {
 | `ParseISO8601Pipe` | 必填日期 | 时间范围查询的起止日期 |
 | `ParseUUIDPipe` | UUID 验证 | 资源 ID 参数验证 |
 | `ParseBooleanPipe` | 必填布尔值 | 状态开关/是否筛选 (true/false/1/0/yes/no) |
+| `ParseEmailPipe` | 邮箱验证 | 用户注册/联系方式/通知邮箱 |
 
 ### Interceptors (拦截器)
 
@@ -1167,4 +1249,4 @@ app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 
 ---
 
-*最后更新：2026-03-30 00:15*
+*最后更新：2026-03-30 00:45*
