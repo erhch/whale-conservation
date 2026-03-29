@@ -506,6 +506,7 @@ getStatistics() {
 - `PaginationPipe` - 分页参数解析管道 (统一处理 page/limit，自动计算 offset)
 - `ParseISO8601Pipe` - 必填 ISO 8601 日期解析管道 (支持范围验证)
 - `ParseUUIDPipe` - UUID 格式验证管道 (支持版本验证、必填/可选模式)
+- `ParseBooleanPipe` - 必填布尔值解析管道 (支持多种格式：true/false/1/0/yes/no/on/off)
 
 **使用示例:**
 
@@ -852,6 +853,88 @@ findWhaleSightings(
 - 标准格式：`xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` (36 字符，含 4 个连字符)
 - 不区分大小写：`550e8400-e29b-41d4-a716-446655440000` 和 `550E8400-E29B-41D4-A716-446655440000` 均有效
 
+---
+
+### 📁 Pipes (管道) - ParseBooleanPipe
+
+**ParseBooleanPipe 使用示例:**
+
+```typescript
+import { ParseBooleanPipe } from '@/common/pipes';
+
+// 必填布尔参数 - 基础用法
+@Query('isActive', new ParseBooleanPipe())
+isActive: boolean;
+
+// 可选布尔参数 - 允许 undefined
+@Query('verified', new ParseBooleanPipe({ required: false }))
+verified?: boolean;
+
+// 带默认值 - 默认不显示未激活项
+@Query('includeInactive', new ParseBooleanPipe({ required: false, defaultValue: false }))
+includeInactive: boolean;
+
+// 在 Controller 中组合使用
+@Get('whales')
+findAll(
+  @Query('isActive', new ParseBooleanPipe()) isActive: boolean,
+  @Query('verified', new ParseBooleanPipe({ required: false })) verified?: boolean,
+  @Query('includeInactive', new ParseBooleanPipe({ required: false, defaultValue: false }))
+  includeInactive: boolean,
+) {
+  return this.whalesService.findAll({ isActive, verified, includeInactive });
+}
+```
+
+**ParseBooleanOptions 选项:**
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `required` | `boolean` | `true` | 是否必填，`false` 时允许空值并返回 `defaultValue` |
+| `defaultValue` | `boolean` | `false` | 默认值，仅在 `required=false` 且值为空时使用 |
+
+**支持的输入格式:**
+
+| 类型 | 真值 (→ `true`) | 假值 (→ `false`) |
+|------|----------------|-----------------|
+| 字符串 | `'true'`, `'1'`, `'yes'`, `'on'` | `'false'`, `'0'`, `'no'`, `'off'` |
+| 数字 | `1` | `0` |
+| 布尔值 | `true` | `false` |
+
+**错误响应示例:**
+
+```json
+// 必填项为空
+{
+  "statusCode": 400,
+  "message": "isActive 是必填项，请提供有效的布尔值 (true/false)",
+  "error": "Bad Request"
+}
+
+// 无效的布尔值
+{
+  "statusCode": 400,
+  "message": "verified 必须是有效的布尔值 (true/false/1/0/yes/no/on/off)",
+  "error": "Bad Request"
+}
+```
+
+**使用场景:**
+
+| 场景 | 示例 | 说明 |
+|------|------|------|
+| 状态筛选 | `?isActive=true` | 筛选激活/未激活的记录 |
+| 验证状态 | `?verified=yes` | 筛选已验证/未验证的数据 |
+| 包含选项 | `?includeInactive=1` | 是否包含已删除/归档的数据 |
+| 导出选项 | `?exportAll=on` | 导出全部/仅当前页数据 |
+
+**ParseBooleanPipe vs ParseOptionalBooleanPipe:**
+
+| 管道 | 必填/可选 | 空值处理 | 使用场景 |
+|------|----------|----------|----------|
+| `ParseBooleanPipe` | 必填 | 抛出异常 | 必须明确指定的布尔开关 |
+| `ParseOptionalBooleanPipe` | 可选 | 返回 `undefined` 或默认值 | 可选的筛选条件 |
+
 待实现:
 
 - 自定义业务验证管道 (根据业务需求扩展)
@@ -934,6 +1017,7 @@ getProfile(@CurrentUser() user: User) {
 | `PaginationPipe` | 分页参数 | 统一处理 page/limit/offset |
 | `ParseISO8601Pipe` | 必填日期 | 时间范围查询的起止日期 |
 | `ParseUUIDPipe` | UUID 验证 | 资源 ID 参数验证 |
+| `ParseBooleanPipe` | 必填布尔值 | 状态开关/是否筛选 (true/false/1/0/yes/no) |
 
 ### Interceptors (拦截器)
 
@@ -1001,4 +1085,4 @@ app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 
 ---
 
-*最后更新：2026-03-29 22:45*
+*最后更新：2026-03-29 23:45*
