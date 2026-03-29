@@ -493,6 +493,191 @@ getStatistics() {
 
 ---
 
+### 📁 Interceptors (拦截器) - TransformInterceptor
+
+**TransformInterceptor 使用示例:**
+
+```typescript
+import { UseInterceptors } from '@nestjs/common';
+import { TransformInterceptor } from '@/common/interceptors';
+
+// 基础用法 - 全局注册 (推荐)
+// main.ts
+app.useGlobalInterceptors(new TransformInterceptor());
+
+// 或者针对特定路由使用
+@UseInterceptors(TransformInterceptor)
+@Get('whales')
+findAllWhales() {
+  return this.whalesService.findAll();
+}
+```
+
+**统一响应格式:**
+
+TransformInterceptor 将所有成功响应封装为标准格式：
+
+```json
+{
+  "success": true,
+  "data": { ... },
+  "message": "操作成功",
+  "timestamp": "2026-03-30T05:30:00.000Z",
+  "path": "/api/v1/whales"
+}
+```
+
+**响应字段说明:**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `success` | `boolean` | 操作是否成功 |
+| `data` | `any` | 实际响应数据 |
+| `message` | `string` | 成功消息 (默认"操作成功") |
+| `timestamp` | `string` | 响应时间戳 (ISO 8601) |
+| `path` | `string` | 请求路径 |
+
+**自定义响应消息:**
+
+```typescript
+// 在 Controller 中返回自定义消息
+@Post('whales')
+@UseInterceptors(TransformInterceptor)
+createWhale(@Body() createWhaleDto: CreateWhaleDto) {
+  const whale = await this.whalesService.create(createWhaleDto);
+  
+  // 返回对象包含 message 字段时会覆盖默认消息
+  return {
+    data: whale,
+    message: '鲸鱼个体创建成功',
+  };
+}
+```
+
+**与分页数据配合使用:**
+
+```typescript
+@Get('whales')
+@UseInterceptors(TransformInterceptor)
+findAllWhales(
+  @Query(new PaginationPipe()) pagination: PaginationResult,
+) {
+  const { data, total } = await this.whalesService.findAll(pagination);
+  
+  return {
+    data,
+    pagination: {
+      page: pagination.page,
+      limit: pagination.limit,
+      total,
+      totalPages: Math.ceil(total / pagination.limit),
+    },
+    message: `查询成功，共 ${total} 条记录`,
+  };
+}
+```
+
+**响应示例:**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "identifier": "BCX001",
+      "name": "大白",
+      "species": "座头鲸"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 156,
+    "totalPages": 16
+  },
+  "message": "查询成功，共 156 条记录",
+  "timestamp": "2026-03-30T05:30:00.000Z",
+  "path": "/api/v1/whales"
+}
+```
+
+**优势:**
+
+1. 📋 **统一格式** - 所有 API 响应保持一致的结构，便于前端处理
+2. 🔍 **调试友好** - 包含时间戳和路径，便于日志追踪和问题排查
+3. ✅ **明确状态** - `success` 字段让前端快速判断操作结果
+4. 📝 **用户提示** - `message` 字段可直接用于用户提示
+
+**与其他拦截器配合使用:**
+
+```typescript
+// 推荐拦截器注册顺序 (main.ts)
+app.useGlobalInterceptors(
+  new LoggingInterceptor(),      // 1. 日志记录 (最先执行)
+  new TransformInterceptor(),    // 2. 响应转换 (封装数据)
+  new CacheInterceptor(),        // 3. 缓存 (可缓存转换后的响应)
+);
+```
+
+**注意事项:**
+
+1. ⚠️ **全局注册** - 建议在 `main.ts` 中全局注册，避免遗漏
+2. ⚠️ **异常处理** - 异常响应由 `HttpExceptionFilter` 处理，不受 TransformInterceptor 影响
+3. ✅ **灵活覆盖** - Controller 可返回包含 `message` 的对象来自定义成功消息
+4. ✅ **嵌套数据** - `data` 字段可以是任意结构 (对象/数组/基本类型)
+
+**与异常过滤器的配合:**
+
+```typescript
+// main.ts - 完整的拦截器和过滤器配置
+import { TransformInterceptor, LoggingInterceptor, CacheInterceptor } from '@/common/interceptors';
+import { HttpExceptionFilter, AllExceptionsFilter } from '@/common/filters';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  
+  // 全局拦截器 (成功响应)
+  app.useGlobalInterceptors(
+    new LoggingInterceptor(),
+    new TransformInterceptor(),
+    new CacheInterceptor(),
+  );
+  
+  // 全局过滤器 (异常响应)
+  app.useGlobalFilters(
+    new HttpExceptionFilter(),
+    new AllExceptionsFilter(),
+  );
+  
+  await app.listen(3000);
+}
+```
+
+**成功响应 vs 异常响应:**
+
+```json
+// ✅ 成功响应 (TransformInterceptor)
+{
+  "success": true,
+  "data": { "id": "123", "name": "大白" },
+  "message": "操作成功",
+  "timestamp": "2026-03-30T05:30:00.000Z",
+  "path": "/api/v1/whales/123"
+}
+
+// ❌ 异常响应 (HttpExceptionFilter)
+{
+  "statusCode": 404,
+  "timestamp": "2026-03-30T05:30:00.000Z",
+  "path": "/api/v1/whales/999",
+  "message": "鲸鱼个体不存在",
+  "error": "Not Found"
+}
+```
+
+---
+
 ### 📁 Pipes (验证管道)
 
 ✅ 已实现:
@@ -1754,7 +1939,7 @@ getProfile(@CurrentUser() user: User) {
 
 | 拦截器 | 用途 | 装饰器 |
 |--------|------|--------|
-| `TransformInterceptor` | 统一响应格式 | - |
+| `TransformInterceptor` | 统一响应格式 | - (响应格式：`{ success, data, message, timestamp, path }`) |
 | `LoggingInterceptor` | 请求日志 | - |
 | `CacheInterceptor` | 响应缓存 | `@CacheKey()`, `@CacheTTL()` |
 | `TimeoutInterceptor` | 超时控制 | `@Timeout()` |
