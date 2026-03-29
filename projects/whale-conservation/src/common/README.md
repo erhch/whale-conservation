@@ -678,6 +678,193 @@ async function bootstrap() {
 
 ---
 
+### 📁 Interceptors (拦截器) - LoggingInterceptor
+
+**LoggingInterceptor 使用示例:**
+
+```typescript
+import { UseInterceptors } from '@nestjs/common';
+import { LoggingInterceptor } from '@/common/interceptors';
+
+// 基础用法 - 全局注册 (推荐)
+// main.ts
+app.useGlobalInterceptors(new LoggingInterceptor());
+
+// 或者针对特定路由使用
+@UseInterceptors(LoggingInterceptor)
+@Get('whales')
+findAllWhales() {
+  return this.whalesService.findAll();
+}
+```
+
+**功能说明:**
+
+LoggingInterceptor 记录每个 HTTP 请求的处理时间和基本信息，便于性能监控和问题排查。
+
+**日志输出格式:**
+
+```
+[HTTP] HTTP method URL status_code - processing_time_ms
+```
+
+**示例日志:**
+
+```
+[HTTP] GET /api/v1/species 200 - 45ms
+[HTTP] POST /api/v1/whales 201 - 128ms
+[HTTP] GET /api/v1/whales/999 404 - 12ms
+[HTTP] DELETE /api/v1/whales/123 500 - 203ms
+```
+
+**日志字段说明:**
+
+| 字段 | 说明 | 示例 |
+|------|------|------|
+| `method` | HTTP 方法 | `GET`, `POST`, `PUT`, `DELETE`, `PATCH` |
+| `url` | 请求路径 | `/api/v1/whales`, `/api/v1/species/123` |
+| `status_code` | HTTP 状态码 | `200`, `201`, `400`, `404`, `500` |
+| `processing_time` | 请求处理时间 (毫秒) | `45ms`, `128ms`, `203ms` |
+
+**推荐拦截器注册顺序:**
+
+```typescript
+// main.ts - 拦截器执行顺序很重要
+app.useGlobalInterceptors(
+  new LoggingInterceptor(),      // 1. 日志记录 (最先执行，记录完整处理时间)
+  new TransformInterceptor(),    // 2. 响应转换 (封装数据)
+  new CacheInterceptor(),        // 3. 缓存 (可缓存转换后的响应)
+  new ETagInterceptor(),         // 4. ETag (添加条件请求支持)
+);
+```
+
+**执行顺序说明:**
+
+1. **LoggingInterceptor** 应该最先执行，这样它可以记录从请求进入到响应完成的完整处理时间
+2. 其他拦截器在 LoggingInterceptor 之后执行，它们的处理时间也会被计入总时间
+3. 日志在响应发送之前记录 (通过 RxJS `tap` 操作符)
+
+**与 NestJS 内置日志集成:**
+
+LoggingInterceptor 使用 NestJS 的 `Logger` 类，支持以下功能:
+
+```typescript
+// 自定义日志上下文
+private readonly logger = new Logger('HTTP');
+
+// 日志级别
+this.logger.log('消息');     // [HTTP] 消息
+this.logger.error('错误');   // [HTTP] 错误
+this.logger.warn('警告');    // [HTTP] 警告
+this.logger.debug('调试');   // [HTTP] 调试 (需要启用 debug 级别)
+this.logger.verbose('详细'); // [HTTP] 详细 (需要启用 verbose 级别)
+```
+
+**配置日志级别:**
+
+```bash
+# 通过环境变量控制日志级别
+export LOG_LEVEL=debug  # 显示 debug 及以上级别日志
+export LOG_LEVEL=error  # 只显示 error 级别日志
+```
+
+**在 Docker 中使用:**
+
+```yaml
+# docker-compose.yml
+services:
+  api:
+    environment:
+      - LOG_LEVEL=debug  # 开发环境启用详细日志
+    # 生产环境建议设置为 info 或 warn
+```
+
+**日志输出到文件:**
+
+```typescript
+// main.ts - 配置日志输出
+import { Logger } from '@nestjs/common';
+import { LoggingInterceptor } from '@/common/interceptors';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  
+  // 使用 Winston 或其他日志库替换默认 Logger
+  // const logger = new WinstonLogger();
+  // Logger.overrideLogger(logger);
+  
+  app.useGlobalInterceptors(new LoggingInterceptor());
+  
+  await app.listen(3000);
+}
+```
+
+**适用场景:**
+
+- ✅ **性能监控** - 识别慢查询和性能瓶颈
+- ✅ **问题排查** - 追踪请求处理流程和时间
+- ✅ **访问日志** - 记录所有 HTTP 请求的基本信息
+- ✅ **审计日志** - 配合其他日志系统实现完整的审计追踪
+- ✅ **开发调试** - 快速查看请求处理情况
+
+**最佳实践:**
+
+1. 📊 **配合 APM 工具** - 将日志输出到 ELK、Datadog、New Relic 等监控系统
+2. 📝 **结构化日志** - 生产环境使用 JSON 格式日志便于解析
+3. 🔍 **添加请求 ID** - 配合 correlation ID 实现跨服务追踪
+4. ⚡ **异步日志** - 高并发场景使用异步日志避免阻塞
+5. 📈 **指标收集** - 从日志中提取指标 (平均响应时间、错误率等)
+
+**扩展建议:**
+
+```typescript
+// 扩展 LoggingInterceptor 添加更多上下文
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
+import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
+
+@Injectable()
+export class LoggingInterceptor implements NestInterceptor {
+  private readonly logger = new Logger('HTTP');
+
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    const request = context.switchToHttp().getRequest();
+    const response = context.switchToHttp().getResponse();
+    
+    const method = request.method;
+    const url = request.url;
+    const userAgent = request.headers['user-agent'];
+    const ip = request.ip;
+    const startTime = Date.now();
+
+    return next.handle().pipe(
+      tap(() => {
+        const processingTime = Date.now() - startTime;
+        const statusCode = response.statusCode;
+        
+        this.logger.log(
+          `${method} ${url} ${statusCode} - ${processingTime}ms - IP: ${ip}`,
+        );
+        
+        // 慢查询警告
+        if (processingTime > 1000) {
+          this.logger.warn(`Slow request: ${method} ${url} - ${processingTime}ms`);
+        }
+      }),
+    );
+  }
+}
+```
+
+**注意事项:**
+
+1. ⚠️ **性能开销** - 日志记录有轻微性能开销，生产环境建议使用异步日志
+2. ⚠️ **日志量** - 高并发场景日志量可能很大，建议配置日志轮转
+3. ✅ **敏感信息** - 避免在日志中记录敏感数据 (密码、token 等)
+4. ✅ **日志级别** - 生产环境使用 `info` 或 `warn`，开发环境使用 `debug`
+
+---
+
 ### 📁 Pipes (验证管道)
 
 ✅ 已实现:
