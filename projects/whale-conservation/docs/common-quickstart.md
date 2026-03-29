@@ -2,7 +2,7 @@
 
 > 鲸创管理系统 - 公共工具模块快速上手指南
 
-版本：v0.1.2  
+版本：v0.1.3  
 最后更新：2026-03-29
 
 ---
@@ -311,100 +311,112 @@ findAll() {
 
 **注意:** ETag 仅对 `GET` 和 `HEAD` 请求生效。
 
-### 🛡️ 场景 11: 请求速率限制 (Rate Limiting)
+---
+
+### 📄 场景 11: 统一分页处理 (PaginationPipe)
+
+使用 `PaginationPipe` 统一处理列表接口的分页参数，自动计算 offset 偏移量。
 
 ```typescript
-import { UseInterceptors, RateLimit, RateLimitTTL } from '@/common/interceptors';
-import { RateLimitInterceptor } from '@/common/interceptors';
+import { PaginationPipe, type PaginationResult } from '@/common/pipes';
 
-@Controller('auth')
-export class AuthController {
-  // 登录接口 - 严格限制防止暴力破解 (10 次/分钟)
-  @UseInterceptors(RateLimitInterceptor)
-  @RateLimit(10)
-  @RateLimitTTL(60)
-  @Post('login')
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+@Controller('whales')
+export class WhalesController {
+  // 基础用法 - 默认 page=1, limit=10
+  @Get()
+  findAll(@Query(new PaginationPipe()) pagination: PaginationResult) {
+    // pagination: { page: 1, limit: 10, offset: 0 }
+    return this.whalesService.findAll(pagination.page, pagination.limit);
   }
   
-  // 公开数据 - 宽松限制 (1000 次/分钟)
-  @UseInterceptors(RateLimitInterceptor)
-  @RateLimit(1000)
-  @RateLimitTTL(60)
-  @Get('public/species')
-  getPublicSpecies() {
-    return this.speciesService.findAll();
+  // 自定义配置 - 默认页大小 20，最大 50
+  @Get('species')
+  findAllSpecies(
+    @Query(new PaginationPipe({ defaultLimit: 20, maxLimit: 50 }))
+    pagination: PaginationResult
+  ) {
+    return this.speciesService.findAll(pagination.page, pagination.limit);
   }
   
-  // 默认限制 - 100 次/分钟 (无需装饰器)
-  @UseInterceptors(RateLimitInterceptor)
-  @Get('whales')
-  findAll() {
-    return this.whalesService.findAll();
+  // 组合其他筛选条件
+  @Get('sightings')
+  findSightings(
+    @Query(new PaginationPipe({ defaultLimit: 25 })) pagination: PaginationResult,
+    @Query('speciesId', new ParseOptionalIntPipe()) speciesId?: number,
+    @Query('startDate', new ParseOptionalDatePipe()) startDate?: Date,
+  ) {
+    return this.sightingsService.findAll({
+      ...pagination,
+      speciesId,
+      startDate,
+    });
   }
 }
 ```
 
-**响应示例 (触发限制时):**
+**PaginationPipe 选项:**
 
-```json
-{
-  "statusCode": 429,
-  "timestamp": "2026-03-29T10:30:00.000Z",
-  "path": "/api/v1/auth/login",
-  "message": "请求过于频繁，请 45 秒后重试",
-  "error": "Too Many Requests",
-  "description": "限制：10 次/60 秒"
-}
-```
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `defaultPage` | `number` | `1` | 默认页码 (从 1 开始) |
+| `defaultLimit` | `number` | `10` | 默认每页数量 |
+| `minPage` | `number` | `1` | 最小页码 |
+| `minLimit` | `number` | `1` | 最小每页数量 |
+| `maxLimit` | `number` | `100` | 最大每页数量 (防止过度查询) |
 
-**使用场景:**
+**PaginationResult 返回值:**
 
-| 场景 | 推荐限制 | 说明 |
-|------|----------|------|
-| 登录/注册 | 5-10 次/分钟 | 防止暴力破解 |
-| 密码重置 | 3 次/分钟 | 防止滥用 |
-| 敏感数据导出 | 10 次/小时 | 防止数据爬取 |
-| 公开 API | 100-1000 次/分钟 | 防止 DDoS |
-| 内部接口 | 默认 100 次/分钟 | 一般防护 |
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| `page` | `number` | 当前页码 (从 1 开始) |
+| `limit` | `number` | 每页数量 |
+| `offset` | `number` | 偏移量 (用于 SQL: OFFSET) |
 
-**工作原理:**
+**优势:**
 
-1. **基于 IP + 路由** - 每个客户端 IP 的每个路由独立计数
-2. **内存存储** - 使用 Map 存储请求计数，适合单机部署
-3. **自动清理** - 每分钟自动清理过期记录
-4. **支持反向代理** - 自动识别 `X-Forwarded-For` 和 `X-Real-IP`
+- ✅ **统一分页逻辑** - 所有列表接口使用相同的分页参数处理
+- ✅ **自动计算 offset** - 无需手动计算 `(page - 1) * limit`
+- ✅ **安全限制** - 防止恶意请求过大的 `limit` 值
+- ✅ **类型安全** - TypeScript 类型定义，IDE 自动补全
 
-**高级用法:**
+**对比传统方式:**
 
 ```typescript
-// 在监控接口中查看速率限制统计
-@Controller('admin')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN)
-export class AdminController {
-  @Get('rate-limit-stats')
-  getRateLimitStats() {
-    const interceptor = this.rateLimitInterceptor;
-    return interceptor.getStats();
-  }
-  
-  // 清除指定 IP 的限制记录
-  @Post('rate-limit/clear/:ip')
-  clearRateLimit(@Param('ip') ip: string) {
-    this.rateLimitInterceptor.clearClient(ip);
-    return { success: true, message: `已清除 ${ip} 的限制记录` };
-  }
+// ❌ 传统方式 - 每个接口重复写分页参数
+@Get()
+findAll(
+  @Query('page', new ParseOptionalIntPipe({ defaultValue: 1, min: 1 }))
+  page: number,
+  @Query('limit', new ParseOptionalIntPipe({ defaultValue: 10, min: 1, max: 100 }))
+  limit: number,
+) {
+  const offset = (page - 1) * limit;  // 手动计算
+  return this.service.findAll(page, limit, offset);
+}
+
+// ✅ 使用 PaginationPipe - 简洁统一
+@Get()
+findAll(@Query(new PaginationPipe()) pagination: PaginationResult) {
+  // pagination.offset 已自动计算
+  return this.service.findAll(pagination.page, pagination.limit);
 }
 ```
 
-**⚠️ 注意事项:**
+**请求示例:**
 
-1. **单机限制** - 内存存储不适用于分布式集群 (集群需使用 Redis)
-2. **IP 识别** - 确保反向代理正确传递 `X-Forwarded-For`
-3. **动态调整** - 根据业务负载调整限制阈值
-4. **白名单** - 内部服务/IP 可考虑 exempt 限制
+```bash
+# 基础用法 - 第 1 页，每页 10 条
+GET /api/v1/whales
+
+# 自定义页码和页大小
+GET /api/v1/whales?page=2&limit=25
+
+# 超出最大限制会自动拒绝
+GET /api/v1/whales?limit=500
+# 响应：400 Bad Request - 每页数量不能超过 100
+```
+
+**注意:** 速率限制 (Rate Limiting) 的详细文档已在 `src/common/README.md` 中说明。
 
 ---
 
