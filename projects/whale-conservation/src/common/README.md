@@ -515,6 +515,7 @@ getStatistics() {
 - `ParseUrlPipe` - URL 格式验证管道 (支持协议验证、必填/可选模式)
 - `ParseCoordinatePipe` - GPS 坐标解析管道 (纬度/经度范围验证)
 - `ParseCoordinatePairPipe` - 坐标对解析管道 (同时验证纬度和经度)
+- `ParseArrayPipe` - 数组解析管道 (逗号分隔字符串转数组，支持类型转换和枚举验证)
 
 **使用示例:**
 
@@ -1532,6 +1533,131 @@ findNearbyStations(
 2. ✅ **使用坐标对管道** - 当需要同时验证纬度和经度时更简洁
 3. ✅ **设置 allowOptional** - 对于可选的坐标筛选参数
 4. ⚠️ **注意坐标顺序** - 始终使用 (latitude, longitude) 顺序，不要混淆
+
+### 📁 Pipes (管道) - ParseArrayPipe
+
+`ParseArrayPipe` 用于解析逗号分隔的字符串为数组，支持类型转换、长度验证和枚举验证。
+
+**使用场景:**
+
+| 场景 | 示例 | 说明 |
+|------|------|------|
+| 多选筛选 | `?species=blue,fin,humpback` | 多个物种 ID |
+| 批量操作 | `?ids=uuid1,uuid2,uuid3` | 批量删除/更新 |
+| 标签过滤 | `?tags=migration,feeding,breeding` | 多个标签 |
+| 状态筛选 | `?status=active,pending` | 多个状态值 |
+| 数值列表 | `?depths=100,200,300` | 多个数值 (需 transform) |
+
+**基础用法:**
+
+```typescript
+import { ParseArrayPipe } from '@/common/pipes';
+
+// 简单的逗号分隔解析
+@Query('species', new ParseArrayPipe())
+species: string[];
+
+// 自定义分隔符 (分号分隔)
+@Query('tags', new ParseArrayPipe({ separator: ';' }))
+tags: string[];
+
+// 不允许空数组
+@Query('ids', new ParseArrayPipe({ allowEmpty: false }))
+ids: string[];
+
+// 限制数组长度 (1-10 项)
+@Query('whaleIds', new ParseArrayPipe({ minItems: 1, maxItems: 10 }))
+whaleIds: string[];
+```
+
+**类型转换:**
+
+```typescript
+// 转换为数字数组
+@Query('depths', new ParseArrayPipe({ 
+  transform: (item) => parseFloat(item) 
+}))
+depths: number[];
+
+// 转换为整数数组
+@Query('years', new ParseArrayPipe({ 
+  transform: (item) => parseInt(item, 10) 
+}))
+years: number[];
+
+// 转换为布尔值数组
+@Query('flags', new ParseArrayPipe({ 
+  transform: (item) => item === 'true' 
+}))
+flags: boolean[];
+
+// 转换为大写
+@Query('codes', new ParseArrayPipe({ 
+  transform: (item) => item.toUpperCase() 
+}))
+codes: string[];
+```
+
+**枚举验证:**
+
+```typescript
+import { StationStatus } from '@/stations/entities/station.entity';
+
+// 验证状态枚举值
+@Query('status', new ParseArrayPipe({ enum: StationStatus }))
+statuses: StationStatus[];
+
+// 自定义错误消息
+@Query('types', new ParseArrayPipe({ 
+  enum: WhaleType,
+  errorMessage: '无效的鲸鱼类型，可选值：blue, fin, humpback, sperm'
+}))
+types: WhaleType[];
+```
+
+**完整示例 - 批量操作:**
+
+```typescript
+@Delete('whales')
+async batchDelete(
+  @Query('ids', new ParseArrayPipe({ 
+    allowEmpty: false,
+    errorMessage: '请提供至少一个鲸鱼 ID'
+  }))
+  ids: string[],
+) {
+  return this.whalesService.batchDelete(ids);
+}
+
+@Get('sightings/filter')
+async filterSightings(
+  @Query('species', new ParseArrayPipe())
+  species: string[],
+  
+  @Query('minDepth', new ParseArrayPipe({ 
+    transform: (item) => parseFloat(item),
+    allowEmpty: true 
+  }))
+  minDepths: number[],
+  
+  @Query('status', new ParseArrayPipe({ enum: SightingStatus }))
+  statuses: SightingStatus[],
+) {
+  return this.sightingsService.filter({ species, minDepths, statuses });
+}
+```
+
+**配置选项:**
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `separator` | `string` | `','` | 分隔符 |
+| `allowEmpty` | `boolean` | `true` | 是否允许空数组 |
+| `minItems` | `number` | `0` | 最小数组长度 |
+| `maxItems` | `number` | `Infinity` | 最大数组长度 |
+| `transform` | `function` | `undefined` | 数组项转换函数 |
+| `enum` | `Type/Record` | `undefined` | 枚举类型验证 |
+| `errorMessage` | `string` | `undefined` | 自定义错误消息 |
 
 待实现:
 

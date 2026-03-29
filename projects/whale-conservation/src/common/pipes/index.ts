@@ -20,3 +20,4 @@ export { ParsePhonePipe, type ParsePhoneOptions } from './parse-phone.pipe';
 export { ParseDatePipe, type ParseDateOptions } from './parse-date.pipe';
 export { ParseUrlPipe, type ParseUrlOptions } from './parse-url.pipe';
 export { ParseCoordinatePipe, ParseCoordinatePairPipe, type CoordinateType, type CoordinatePair, type ParseCoordinateOptions } from './parse-coordinate.pipe';
+export { ParseArrayPipe, type ParseArrayOptions } from './parse-array.pipe';
