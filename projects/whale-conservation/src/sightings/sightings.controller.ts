@@ -82,4 +82,27 @@ export class SightingsController {
   async remove(@Param('id') id: string): Promise<void> {
     return this.sightingsService.remove(id);
   }
+
+  @Get('stats/overview')
+  @ApiOperation({ summary: '获取观测统计概览' })
+  @ApiQuery({ name: 'startDate', required: false, type: Date, description: '开始日期' })
+  @ApiQuery({ name: 'endDate', required: false, type: Date, description: '结束日期' })
+  @ApiQuery({ name: 'whaleId', required: false, type: String, description: '鲸鱼 ID 筛选' })
+  @ApiQuery({ name: 'stationId', required: false, type: String, description: '观测站 ID 筛选' })
+  @UseInterceptors(CacheInterceptor)
+  async getStatistics(
+    @Query('startDate') startDate?: Date,
+    @Query('endDate') endDate?: Date,
+    @Query('whaleId') whaleId?: string,
+    @Query('stationId') stationId?: string,
+  ): Promise<{
+    total: number;
+    verifiedCount: number;
+    uniqueWhales: number;
+    avgGroupSize: number;
+    topLocations: Array<{ locationName: string; count: number }>;
+    recentTrend: Array<{ date: string; count: number }>;
+  }> {
+    return this.sightingsService.getStatistics({ startDate, endDate, whaleId, stationId });
+  }
 }

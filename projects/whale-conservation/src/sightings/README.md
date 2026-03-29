@@ -367,6 +367,84 @@ curl -X DELETE "http://localhost:3000/api/v1/sightings/550e8400-e29b-41d4-a716-4
 
 ---
 
+### 7. 获取观测统计概览 (新增)
+
+```http
+GET /api/v1/sightings/stats/overview
+```
+
+**查询参数:**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `startDate` | Date | 否 | 开始日期 (ISO 8601) |
+| `endDate` | Date | 否 | 结束日期 (ISO 8601) |
+| `whaleId` | UUID | 否 | 按鲸鱼 ID 筛选 |
+| `stationId` | UUID | 否 | 按站点 ID 筛选 |
+
+**响应示例:**
+
+```json
+{
+  "total": 156,
+  "verifiedCount": 142,
+  "uniqueWhales": 23,
+  "avgGroupSize": 2.4,
+  "topLocations": [
+    { "locationName": "深圳大鹏湾", "count": 45 },
+    { "locationName": "南海北部海域", "count": 38 },
+    { "locationName": "台湾海峡", "count": 27 },
+    { "locationName": "北部湾", "count": 22 },
+    { "locationName": "珠江口", "count": 18 }
+  ],
+  "recentTrend": [
+    { "date": "2026-03-23", "count": 12 },
+    { "date": "2026-03-24", "count": 18 },
+    { "date": "2026-03-25", "count": 15 },
+    { "date": "2026-03-26", "count": 22 },
+    { "date": "2026-03-27", "count": 19 },
+    { "date": "2026-03-28", "count": 25 },
+    { "date": "2026-03-29", "count": 14 }
+  ]
+}
+```
+
+**统计字段说明:**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `total` | number | 总观测记录数 |
+| `verifiedCount` | number | 已验证记录数 |
+| `uniqueWhales` | number | 观测到的唯一鲸鱼数量 |
+| `avgGroupSize` | number | 平均群体数量 (保留 2 位小数) |
+| `topLocations` | array | 热门观测地点 TOP 5 |
+| `recentTrend` | array | 近 7 天观测趋势 (按日期分组) |
+
+**cURL 示例:**
+
+```bash
+# 获取全部统计
+curl -X GET "http://localhost:3000/api/v1/sightings/stats/overview"
+
+# 按日期范围筛选
+curl -X GET "http://localhost:3000/api/v1/sightings/stats/overview?startDate=2026-03-01&endDate=2026-03-31"
+
+# 按鲸鱼筛选
+curl -X GET "http://localhost:3000/api/v1/sightings/stats/overview?whaleId=123e4567-e89b-12d3-a456-426614174000"
+
+# 按站点筛选
+curl -X GET "http://localhost:3000/api/v1/sightings/stats/overview?stationId=987fcdeb-51a2-43d1-b890-123456789abc"
+```
+
+**使用场景:**
+
+- 📊 **仪表板展示** - 首页统计卡片数据源
+- 📈 **趋势分析** - 近 7 天观测热度变化
+- 🗺️ **热点地图** - 热门观测地点分布
+- 🐋 **种群分析** - 特定鲸鱼的活动频率
+
+---
+
 ## 🔒 权限控制
 
 | 端点 | 认证要求 | 角色要求 |
@@ -603,7 +681,7 @@ async create(createSightingDto: CreateSightingDto) {
 - [ ] 地理位置验证 (海洋区域检查)
 - [ ] 观测数据导出 (CSV/GeoJSON)
 - [ ] 迁徙轨迹分析 API
-- [ ] 观测热度统计 (按时间/地点)
+- [x] 观测热度统计 (按时间/地点) - ✅ 已实现 `/stats/overview` 端点
 
 ---
 
