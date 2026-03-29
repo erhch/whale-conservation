@@ -511,6 +511,7 @@ getStatistics() {
 - `ParseBooleanPipe` - 必填布尔值解析管道 (支持多种格式：true/false/1/0/yes/no/on/off)
 - `ParseEmailPipe` - 邮箱格式验证管道 (支持必填/可选模式、自动转小写)
 - `ParsePhonePipe` - 手机号格式验证管道 (支持中国大陆手机号、国际格式选项)
+- `ParseDatePipe` - 必填日期解析管道 (YYYY-MM-DD 格式，支持日期范围验证)
 
 **使用示例:**
 
@@ -1121,6 +1122,106 @@ createResearcher(
 | 中国联通 | 130, 131, 132, 155, 156, 185, 186, 166, 196 |
 | 中国电信 | 133, 153, 180, 181, 189, 199 |
 | 中国广电 | 192 |
+
+### 📁 Pipes (管道) - ParseDatePipe
+
+**ParseDatePipe 使用示例:**
+
+```typescript
+import { ParseDatePipe } from '@/common/pipes';
+
+// 必填日期参数 - 基础用法
+@Query('birthDate', new ParseDatePipe())
+birthDate: Date;
+
+@Body('observationDate', new ParseDatePipe())
+observationDate: Date;
+
+// 带日期范围验证
+@Query('startDate', new ParseDatePipe({ minDate: '2020-01-01' }))
+startDate: Date;
+
+@Query('endDate', new ParseDatePipe({ maxDate: '2026-12-31' }))
+endDate: Date;
+
+// 在 Controller 中组合使用
+@Post('sightings')
+createSighting(
+  @Body('speciesId', new ParseIntPipe()) speciesId: number,
+  @Body('observationDate', new ParseDatePipe()) observationDate: Date,
+  @Body('latitude', new ParseFloatPipe({ min: -90, max: 90 })) latitude: number,
+  @Body('longitude', new ParseFloatPipe({ min: -180, max: 180 })) longitude: number,
+) {
+  return this.sightingsService.create({ speciesId, observationDate, latitude, longitude });
+}
+```
+
+**ParseDateOptions 选项:**
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `minDate` | `string` | `undefined` | 最小允许日期 (YYYY-MM-DD 格式) |
+| `maxDate` | `string` | `undefined` | 最大允许日期 (YYYY-MM-DD 格式) |
+
+**验证规则:**
+
+| 规则 | 说明 |
+|------|------|
+| 格式验证 | 必须是 YYYY-MM-DD 格式 (如 `2026-03-30`) |
+| 日期有效性 | 验证日期是否真实存在 (防止 `2024-02-30` 等无效日期) |
+| 范围验证 | 可选设置最小/最大日期限制 |
+| 必填校验 | 默认必填，不允许 `undefined`/`null`/空字符串 |
+
+**错误响应示例:**
+
+```json
+// 必填项为空
+{
+  "statusCode": 400,
+  "message": "参数是必填项，请提供有效的日期 (YYYY-MM-DD 格式)",
+  "error": "Bad Request"
+}
+
+// 格式错误
+{
+  "statusCode": 400,
+  "message": "参数必须是 YYYY-MM-DD 格式的日期",
+  "error": "Bad Request"
+}
+
+// 无效日期
+{
+  "statusCode": 400,
+  "message": "参数不是有效的日期",
+  "error": "Bad Request"
+}
+
+// 超出范围
+{
+  "statusCode": 400,
+  "message": "参数不能早于 2020-01-01",
+  "error": "Bad Request"
+}
+```
+
+**使用场景:**
+
+| 场景 | 示例 | 说明 |
+|------|------|------|
+| 鲸鱼出生日期 | `POST /whales` | 验证鲸鱼个体的出生日期 |
+| 观测记录日期 | `POST /sightings` | 验证观测记录的日期 |
+| 数据查询范围 | `GET /sightings` | 验证查询的起止日期 |
+| 项目时间线 | `POST /projects` | 验证项目的开始/结束日期 |
+| 证书有效期 | `POST /certifications` | 验证证书的有效期 |
+
+**日期格式示例:**
+
+| 有效格式 | 无效格式 | 说明 |
+|---------|---------|------|
+| `2026-03-30` | `2026/03/30` | 必须使用连字符 |
+| `2024-02-29` | `2024-02-30` | 2 月 30 日不存在 |
+| `2000-01-01` | `01-01-2000` | 必须是 YYYY-MM-DD 顺序 |
+| `1999-12-31` | `1999-13-01` | 月份不能超过 12 |
 
 ### 📁 Pipes (管道) - ParseIntPipe
 
