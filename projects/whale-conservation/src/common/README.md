@@ -509,6 +509,7 @@ getStatistics() {
 - `ParseUUIDPipe` - UUID 格式验证管道 (支持版本验证、必填/可选模式)
 - `ParseBooleanPipe` - 必填布尔值解析管道 (支持多种格式：true/false/1/0/yes/no/on/off)
 - `ParseEmailPipe` - 邮箱格式验证管道 (支持必填/可选模式、自动转小写)
+- `ParsePhonePipe` - 手机号格式验证管道 (支持中国大陆手机号、国际格式选项)
 
 **使用示例:**
 
@@ -1017,6 +1018,109 @@ createUser(
 | `user+tag@example.co.uk` | `user name@example.com` | 包含空格 |
 | `user123@test.org` | `user@example.c` | 顶级域名过短 |
 
+### 📁 Pipes (管道) - ParsePhonePipe
+
+**ParsePhonePipe 使用示例:**
+
+```typescript
+import { ParsePhonePipe } from '@/common/pipes';
+
+// 必填手机号 - 基础用法
+@Body('phone', new ParsePhonePipe())
+phone: string;
+
+@Query('contactPhone', new ParsePhonePipe())
+contactPhone: string;
+
+// 可选手机号 - 允许 undefined
+@Query('backupPhone', new ParsePhonePipe({ required: false }))
+backupPhone?: string;
+
+// 允许国际格式 (+86 前缀)
+@Body('phone', new ParsePhonePipe({ allowInternational: true }))
+phone: string;
+
+// 在 Controller 中组合使用
+@Post('researchers')
+createResearcher(
+  @Body('name', new ParseOptionalStringPipe({ minLength: 2, maxLength: 50 })) name: string,
+  @Body('email', new ParseEmailPipe()) email: string,
+  @Body('phone', new ParsePhonePipe()) phone: string,
+  @Body('emergencyPhone', new ParsePhonePipe({ required: false })) emergencyPhone?: string,
+) {
+  return this.researchersService.create({ name, email, phone, emergencyPhone });
+}
+```
+
+**ParsePhoneOptions 选项:**
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `required` | `boolean` | `true` | 是否必填，`false` 时允许空值并返回 `undefined` |
+| `allowInternational` | `boolean` | `false` | 是否允许国际格式 (+86 前缀) |
+
+**验证规则:**
+
+| 规则 | 说明 |
+|------|------|
+| 格式验证 | 中国大陆手机号：11 位数字，以 1 开头，第二位为 3-9 |
+| 自动清理 | 自动去除空格和连字符 (`-`) |
+| 国际格式 | 可选支持 `+86` 前缀 (需设置 `allowInternational: true`) |
+| 支持格式 | `13800138000`, `198-1234-5678`, `+8613800138000` |
+
+**错误响应示例:**
+
+```json
+// 必填项为空
+{
+  "statusCode": 400,
+  "message": "手机号是必填项，请提供有效的中国大陆手机号",
+  "error": "Bad Request"
+}
+
+// 无效的手机号格式
+{
+  "statusCode": 400,
+  "message": "12345678901 不是有效的中国大陆手机号格式 (11 位数字，以 1 开头，第二位为 3-9)",
+  "error": "Bad Request"
+}
+
+// 国际格式未启用
+{
+  "statusCode": 400,
+  "message": "+8613800138000 不是有效的手机号格式 (支持 11 位数字或 +86 开头的国际格式)",
+  "error": "Bad Request"
+}
+```
+
+**使用场景:**
+
+| 场景 | 示例 | 说明 |
+|------|------|------|
+| 用户注册 | `POST /users` | 验证注册手机号 |
+| 研究员信息 | `POST /researchers` | 验证研究员联系方式 |
+| 紧急联系人 | `POST /emergency-contact` | 验证紧急联系人电话 |
+| 志愿者登记 | `POST /volunteers` | 验证志愿者手机号 |
+| 备用联系方式 | `PUT /profile` | 可选的备用手机号 |
+
+**手机号格式示例:**
+
+| 有效格式 | 无效格式 | 说明 |
+|---------|---------|------|
+| `13800138000` | `12345678901` | 第二位必须是 3-9 |
+| `198-1234-5678` | `1380013800` | 必须 11 位数字 |
+| `+8613800138000` | `8613800138000` | 国际格式需带 + 号 |
+| `150 1234 5678` | `138001380001` | 不能超过 11 位 |
+
+**常见号段:**
+
+| 运营商 | 号段 |
+|--------|------|
+| 中国移动 | 134, 135, 136, 137, 138, 139, 150, 151, 152, 157, 158, 159, 182, 183, 184, 187, 188, 198 |
+| 中国联通 | 130, 131, 132, 155, 156, 185, 186, 166, 196 |
+| 中国电信 | 133, 153, 180, 181, 189, 199 |
+| 中国广电 | 192 |
+
 ### 📁 Pipes (管道) - ParseIntPipe
 
 **ParseIntPipe 使用示例:**
@@ -1182,6 +1286,7 @@ getProfile(@CurrentUser() user: User) {
 | `ParseUUIDPipe` | UUID 验证 | 资源 ID 参数验证 |
 | `ParseBooleanPipe` | 必填布尔值 | 状态开关/是否筛选 (true/false/1/0/yes/no) |
 | `ParseEmailPipe` | 邮箱验证 | 用户注册/联系方式/通知邮箱 |
+| `ParsePhonePipe` | 手机号验证 | 用户注册/研究员信息/紧急联系人 |
 
 ### Interceptors (拦截器)
 

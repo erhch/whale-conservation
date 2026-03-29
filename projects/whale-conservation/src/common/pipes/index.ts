@@ -14,3 +14,4 @@ export { ParseISO8601Pipe, type ParseISO8601Options } from './parse-iso8601.pipe
 export { ParseUUIDPipe, type ParseUUIDOptions } from './parse-uuid.pipe';
 export { ParseBooleanPipe, type ParseBooleanOptions } from './parse-boolean.pipe';
 export { ParseEmailPipe, type ParseEmailOptions } from './parse-email.pipe';
+export { ParsePhonePipe, type ParsePhoneOptions } from './parse-phone.pipe';
