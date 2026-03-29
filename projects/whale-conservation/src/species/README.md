@@ -10,6 +10,7 @@
 |------|------|------|------|
 | 获取物种列表 | `GET /api/v1/species` | ❌ 公开 | ✅ 5 分钟 |
 | 获取单个物种 | `GET /api/v1/species/:id` | ❌ 公开 | ✅ 5 分钟 |
+| 搜索物种 | `GET /api/v1/species/search?q=关键词` | ❌ 公开 | ✅ 5 分钟 |
 | 创建物种 | `POST /api/v1/species` | ✅ JWT | ❌ |
 | 更新物种 | `PUT /api/v1/species/:id` | ✅ JWT | ❌ |
 | 删除物种 | `DELETE /api/v1/species/:id` | ✅ JWT | ❌ |
@@ -94,6 +95,44 @@ curl -X GET "http://localhost:3000/api/v1/species?iucnStatus=VU&family=Delphinid
   "page": 1,
   "limit": 10
 }
+```
+
+### 搜索物种 (公开)
+
+```bash
+# 按中文名搜索
+curl -X GET "http://localhost:3000/api/v1/species/search?q=蓝鲸"
+
+# 按学名搜索
+curl -X GET "http://localhost:3000/api/v1/species/search?q=Balaenoptera"
+
+# 按科属搜索
+curl -X GET "http://localhost:3000/api/v1/species/search?q=须鲸科"
+
+# 按英文名搜索
+curl -X GET "http://localhost:3000/api/v1/species/search?q=Blue Whale"
+```
+
+**响应格式:**
+
+```json
+[
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "scientificName": "Balaenoptera musculus",
+    "commonNameZh": "蓝鲸",
+    "commonNameEn": "Blue Whale",
+    "family": "Balaenopteridae",
+    "averageLength": 24,
+    "averageWeight": 150,
+    "iucnStatus": "EN",
+    "populationEstimate": 25000,
+    "distribution": "全球各大洋",
+    "isActive": true,
+    "createdAt": "2024-01-15T08:30:00.000Z",
+    "updatedAt": "2024-01-15T08:30:00.000Z"
+  }
+]
 ```
 
 ### 获取单个物种详情 (公开)
@@ -357,5 +396,5 @@ GET /api/v1/whales?speciesId=a1b2c3d4-e5f6-7890-abcd-ef1234567890
 
 ---
 
-**最后更新:** 2026-03-28  
-**模块状态:** ✅ 完成 (分页 + 筛选 + 缓存)
+**最后更新:** 2026-03-29  
+**模块状态:** ✅ 完成 (分页 + 筛选 + 缓存 + 搜索)

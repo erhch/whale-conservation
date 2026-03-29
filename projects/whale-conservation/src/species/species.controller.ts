@@ -84,4 +84,14 @@ export class SpeciesController {
   async remove(@Param('id') id: string): Promise<void> {
     return this.speciesService.remove(id);
   }
+
+  @Get('search')
+  @Public()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(300)
+  @ApiOperation({ summary: '搜索物种 (支持学名/中文名/英文名/科属模糊搜索)' })
+  @ApiQuery({ name: 'q', required: true, type: String, description: '搜索关键词', example: '蓝鲸' })
+  async search(@Query('q') query: string): Promise<Species[]> {
+    return this.speciesService.search(query);
+  }
 }

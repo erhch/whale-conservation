@@ -71,4 +71,25 @@ export class SpeciesService {
     species.isActive = false; // 软删除
     await this.speciesRepository.save(species);
   }
+
+  /**
+   * 搜索物种 - 支持按学名、中文名、英文名、科属模糊搜索
+   */
+  async search(query: string): Promise<Species[]> {
+    if (!query || query.trim().length === 0) {
+      return [];
+    }
+
+    const searchTerm = `%${query.trim()}%`;
+
+    return this.speciesRepository
+      .createQueryBuilder('species')
+      .where('species.isActive = :isActive', { isActive: true })
+      .andWhere(
+        '(species.scientificName LIKE :term OR species.commonNameZh LIKE :term OR species.commonNameEn LIKE :term OR species.family LIKE :term)',
+        { term: searchTerm },
+      )
+      .orderBy('species.createdAt', 'DESC')
+      .getMany();
+  }
 }
