@@ -3093,7 +3093,281 @@ async createOrganization(@Body() dto: CreateOrganizationDto) {
 
 - 自定义业务验证管道 (根据业务需求扩展)
 
-### 📁 Decorators (装饰器)
+---
+
+### 📁 Pipes (管道) - ParseUUIDPipe
+
+`ParseUUIDPipe` 用于验证参数是否为有效的 UUID 格式，支持 UUID v1-v5 版本验证。
+
+**使用场景:**
+
+| 场景 | 示例 | 说明 |
+|------|------|------|
+| 资源 ID | `/api/whales/:id` | 验证鲸鱼个体 ID |
+| 用户 ID | `/api/users/:id` | 验证用户 ID |
+| 观测记录 ID | `/api/sightings/:id` | 验证观测记录 ID |
+| 物种 ID | `/api/species/:id` | 验证物种 ID |
+| 组织 ID | `/api/organizations/:id` | 验证组织 ID |
+
+**基础用法:**
+
+```typescript
+import { ParseUUIDPipe } from '@/common/pipes';
+
+// 必填 UUID 参数 - 支持任意版本 (v1-v5)
+@Param('id', new ParseUUIDPipe()) id: string;
+
+// 可选 UUID 参数
+@Param('id', new ParseUUIDPipe({ required: false })) id?: string;
+
+// 指定 UUID 版本 (v4 - 随机 UUID)
+@Param('id', new ParseUUIDPipe({ version: 4 })) id: string;
+
+// 指定 UUID 版本 (v1 - 时间戳 UUID)
+@Param('id', new ParseUUIDPipe({ version: 1 })) id: string;
+```
+
+**完整示例 - 资源 CRUD:**
+
+```typescript
+import { Controller, Get, Param, Patch, Delete, Body } from '@nestjs/common';
+import { ParseUUIDPipe } from '@/common/pipes';
+
+@Controller('whales')
+export class WhalesController {
+  // 查看详情 - UUID 验证
+  @Get(':id')
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.whalesService.findOne(id);
+  }
+
+  // 更新 - UUID 验证
+  @Patch(':id')
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateWhaleDto,
+  ) {
+    return this.whalesService.update(id, dto);
+  }
+
+  // 删除 - UUID 验证
+  @Delete(':id')
+  remove(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.whalesService.remove(id);
+  }
+
+  // 批量操作 - 多个 UUID 参数
+  @Post('batch-transfer')
+  batchTransfer(
+    @Body('sourceId', new ParseUUIDPipe({ version: 4 })) sourceId: string,
+    @Body('targetId', new ParseUUIDPipe({ version: 4 })) targetId: string,
+  ) {
+    return this.whalesService.batchTransfer(sourceId, targetId);
+  }
+}
+```
+
+**配置选项:**
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `version` | `1 \| 2 \| 3 \| 4 \| 5` | `undefined` | 指定 UUID 版本，不指定则接受任意版本 |
+| `required` | `boolean` | `true` | 是否必填，`true` 时空值抛出异常 |
+
+**UUID 版本说明:**
+
+| 版本 | 生成方式 | 典型场景 |
+|------|----------|----------|
+| `v1` | 基于时间戳 + MAC 地址 | 需要时间顺序的场景 |
+| `v2` | 基于时间戳 + 本地标识符 | DCE 安全版本 (较少使用) |
+| `v3` | 基于命名空间 + MD5 哈希 | 确定性 UUID (相同输入=相同输出) |
+| `v4` | 随机生成 | **最常用**，通用场景 |
+| `v5` | 基于命名空间 + SHA-1 哈希 | 确定性 UUID (比 v3 更安全) |
+
+**验证规则:**
+
+- 必须符合 UUID 标准格式：`xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` (36 字符，含 4 个连字符)
+- 如果指定 `version`，版本号必须匹配 (第 13 位字符)
+- 如果指定 `version`，变体位必须匹配 (第 17 位字符必须是 8/9/a/b)
+- 不区分大小写 (接受大写或小写十六进制字符)
+
+**错误消息示例:**
+
+```
+- "id 是必填项，请提供有效的 UUID"
+- "id 必须是有效的 UUID 格式"
+- "id 必须是有效的 UUID(v4) 格式"
+```
+
+**错误响应示例:**
+
+```json
+// 无效 UUID 格式
+{
+  "statusCode": 400,
+  "message": "id 必须是有效的 UUID 格式",
+  "timestamp": "2026-03-30T12:45:00.000Z",
+  "path": "/api/v1/whales/invalid-id"
+}
+
+// 版本不匹配
+{
+  "statusCode": 400,
+  "message": "id 必须是有效的 UUID(v4) 格式",
+  "timestamp": "2026-03-30T12:45:00.000Z",
+  "path": "/api/v1/whales/123e4567-e89b-12d3-a456-426614174000"
+}
+```
+
+**注意事项:**
+
+1. ✅ **推荐使用 v4** - 大多数场景使用 UUID v4 (随机生成) 即可
+2. ✅ **路径参数验证** - 主要用于 `@Param('id')` 验证资源 ID
+3. ⚠️ **性能考虑** - UUID 验证是轻量级正则匹配，性能开销极小
+4. ⚠️ **数据库兼容** - PostgreSQL 有原生 UUID 类型，推荐在数据库中也使用 UUID
+
+---
+
+### 📁 Pipes (管道) - ParseISO8601Pipe
+
+`ParseISO8601Pipe` 用于验证和解析 ISO 8601 格式的日期时间参数，支持日期范围验证。
+
+**使用场景:**
+
+| 场景 | 示例 | 说明 |
+|------|------|------|
+| 时间范围查询 | `?startTime=2026-01-01&endTime=2026-12-31` | 查询指定时间范围内的数据 |
+| 日期筛选 | `?date=2026-03-30` | 查询特定日期的数据 |
+| 时间戳筛选 | `?timestamp=2026-03-30T12:00:00Z` | 精确到秒的时间筛选 |
+| 生日验证 | `?birthDate=2020-05-15` | 验证出生日期格式 |
+| 观测时间 | `?observedAt=2026-03-30T08:30:00.000Z` | 验证观测时间戳 |
+
+**基础用法:**
+
+```typescript
+import { ParseISO8601Pipe } from '@/common/pipes';
+
+// 必填日期参数
+@Query('startTime', new ParseISO8601Pipe()) startTime: Date;
+
+// 可选日期参数 (需要手动处理 undefined)
+@Query('endTime', new ParseISO8601Pipe({ required: false })) endTime?: Date;
+
+// 日期范围验证 - 不能早于指定日期
+@Query('birthDate', new ParseISO8601Pipe({ 
+  min: new Date('2000-01-01') 
+})) birthDate: Date;
+
+// 日期范围验证 - 不能晚于指定日期
+@Query('deadline', new ParseISO8601Pipe({ 
+  max: new Date() 
+})) deadline: Date;
+
+// 日期范围验证 - 在指定范围内
+@Query('eventDate', new ParseISO8601Pipe({ 
+  min: new Date('2026-01-01'),
+  max: new Date('2026-12-31')
+})) eventDate: Date;
+```
+
+**完整示例 - 时间范围查询:**
+
+```typescript
+import { Controller, Get, Query } from '@nestjs/common';
+import { ParseISO8601Pipe, ParseOptionalIntPipe } from '@/common/pipes';
+
+@Controller('sightings')
+export class SightingsController {
+  @Get()
+  findAll(
+    @Query('page', new ParseOptionalIntPipe({ defaultValue: 1 })) page: number,
+    @Query('limit', new ParseOptionalIntPipe({ defaultValue: 20 })) limit: number,
+    
+    // 开始时间 - 必填，不能早于 2020 年
+    @Query('startTime', new ParseISO8601Pipe({ 
+      min: new Date('2020-01-01') 
+    })) startTime: Date,
+    
+    // 结束时间 - 必填，不能晚于当前时间
+    @Query('endTime', new ParseISO8601Pipe({ 
+      max: new Date() 
+    })) endTime: Date,
+    
+    // 可选：特定日期筛选
+    @Query('date', new ParseISO8601Pipe({ required: false })) date?: Date,
+  ) {
+    return this.sightingsService.findAll({
+      page,
+      limit,
+      startTime,
+      endTime,
+      date,
+    });
+  }
+}
+```
+
+**配置选项:**
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `min` | `Date` | `undefined` | 最小日期限制 (包含) |
+| `max` | `Date` | `undefined` | 最大日期限制 (包含) |
+
+**支持的 ISO 8601 格式:**
+
+| 格式 | 示例 | 说明 |
+|------|------|------|
+| 日期 | `2026-03-30` | 仅日期 (午夜 00:00:00 UTC) |
+| 日期时间 | `2026-03-30T12:45:00` | 日期 + 时间 (本地时区) |
+| UTC 时间 | `2026-03-30T12:45:00Z` | 日期 + 时间 (UTC) |
+| 带时区 | `2026-03-30T12:45:00+08:00` | 日期 + 时间 (指定时区) |
+| 带毫秒 | `2026-03-30T12:45:00.123Z` | 日期 + 时间 + 毫秒 (UTC) |
+
+**验证规则:**
+
+- 必须是有效的 ISO 8601 格式
+- 如果指定 `min`，日期不能早于 `min`
+- 如果指定 `max`，日期不能晚于 `max`
+- 返回值为 `Date` 对象 (可直接用于数据库查询)
+
+**错误消息示例:**
+
+```
+- "startTime 是必填项，请提供有效的日期 (ISO 8601 格式)"
+- "endTime 必须是有效的日期格式 (ISO 8601)"
+- "startTime 不能早于 2020-01-01T00:00:00.000Z"
+- "endTime 不能晚于 2026-03-30T12:45:00.000Z"
+```
+
+**错误响应示例:**
+
+```json
+// 无效日期格式
+{
+  "statusCode": 400,
+  "message": "startTime 必须是有效的日期格式 (ISO 8601)",
+  "timestamp": "2026-03-30T12:45:00.000Z",
+  "path": "/api/v1/sightings"
+}
+
+// 超出日期范围
+{
+  "statusCode": 400,
+  "message": "startTime 不能早于 2020-01-01T00:00:00.000Z",
+  "timestamp": "2026-03-30T12:45:00.000Z",
+  "path": "/api/v1/sightings"
+}
+```
+
+**注意事项:**
+
+1. ✅ **时区处理** - JavaScript `Date` 对象内部存储为 UTC，前端传入的本地时间会自动转换
+2. ✅ **数据库兼容** - PostgreSQL TIMESTAMP/TIMESTAMPTZ 类型与 ISO 8601 完美兼容
+3. ⚠️ **必填 vs 可选** - 默认必填，可选参数需设置 `required: false` 并处理 `undefined`
+4. ⚠️ **精度问题** - ISO 8601 支持毫秒精度，数据库字段需使用 `timestamp(3)` 或更高
+
+---
 
 ✅ 已实现:
 
@@ -3523,4 +3797,4 @@ app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 
 ---
 
-*最后更新：2026-03-30 06:15*
+*最后更新：2026-03-30 12:45*
