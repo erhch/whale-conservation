@@ -2821,6 +2821,107 @@ async filterSightings(
 | `enum` | `Type/Record` | `undefined` | 枚举类型验证 |
 | `errorMessage` | `string` | `undefined` | 自定义错误消息 |
 
+**验证规则:**
+
+| 规则 | 说明 |
+|------|------|
+| 分隔符解析 | 使用配置的 `separator` 分割字符串 (默认逗号) |
+| 空值处理 | `allowEmpty: true` 时空值返回 `[]`，否则抛出异常 |
+| 长度验证 | 数组长度必须在 `minItems` 和 `maxItems` 之间 |
+| 类型转换 | 通过 `transform` 函数转换每个数组项 |
+| 枚举验证 | 如果配置 `enum`，验证每个项是否为有效枚举值 |
+
+**错误响应示例:**
+
+```json
+// 必填数组为空
+{
+  "statusCode": 400,
+  "message": "ids 不能为空数组",
+  "error": "Bad Request"
+}
+
+// 数组长度不足
+{
+  "statusCode": 400,
+  "message": "数组长度不能少于 1 项",
+  "error": "Bad Request"
+}
+
+// 数组长度超限
+{
+  "statusCode": 400,
+  "message": "数组长度不能超过 10 项",
+  "error": "Bad Request"
+}
+
+// 枚举值无效
+{
+  "statusCode": 400,
+  "message": "值 \"invalid\" 不是有效的枚举值",
+  "error": "Bad Request"
+}
+
+// 自定义错误消息
+{
+  "statusCode": 400,
+  "message": "请提供至少一个鲸鱼 ID",
+  "error": "Bad Request"
+}
+```
+
+**使用场景对比:**
+
+| 场景 | 推荐管道 | 说明 |
+|------|----------|------|
+| 单选枚举 | `ParseEnumPipe` | 单个枚举值 |
+| 多选枚举 | `ParseArrayPipe` + `enum` | 多个枚举值 (逗号分隔) |
+| 字符串列表 | `ParseArrayPipe` | 简单字符串数组 |
+| 数字列表 | `ParseArrayPipe` + `transform` | 数字数组 (需转换) |
+| 布尔列表 | `ParseArrayPipe` + `transform` | 布尔数组 (需转换) |
+
+**最佳实践:**
+
+1. ✅ **设置合理的长度限制** - 使用 `minItems`/`maxItems` 防止滥用
+2. ✅ **使用枚举验证** - 对于固定选项使用 `enum` 选项确保数据有效性
+3. ✅ **提供清晰的错误消息** - 使用 `errorMessage` 自定义用户友好的提示
+4. ✅ **注意 transform 性能** - 避免在转换函数中执行复杂操作
+5. ⚠️ **分隔符选择** - 如果数据可能包含逗号，使用其他分隔符 (如分号 `;`)
+
+**常见用法示例:**
+
+```typescript
+// 批量 ID 查询 - 至少 1 个，最多 50 个
+@Query('ids', new ParseArrayPipe({ 
+  allowEmpty: false,
+  minItems: 1,
+  maxItems: 50,
+  errorMessage: '请提供 1-50 个 ID，使用逗号分隔'
+}))
+ids: string[];
+
+// 多选状态筛选 - 枚举验证
+@Query('status', new ParseArrayPipe({ 
+  enum: SightingStatus,
+  allowEmpty: true 
+}))
+statuses: SightingStatus[];
+
+// 数值范围筛选 - 类型转换
+@Query('depths', new ParseArrayPipe({ 
+  transform: (item) => parseFloat(item),
+  allowEmpty: true
+}))
+depths: number[];
+
+// 标签搜索 - 自定义分隔符
+@Query('tags', new ParseArrayPipe({ 
+  separator: ';',
+  transform: (item) => item.toLowerCase().trim()
+}))
+tags: string[];
+```
+
 ---
 
 ### 📁 Pipes (管道) - ParseEnumPipe
