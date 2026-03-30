@@ -1998,6 +1998,89 @@ findAll(
 | `ParseBooleanPipe` | 必填 | 抛出异常 | 必须明确指定的布尔开关 |
 | `ParseOptionalBooleanPipe` | 可选 | 返回 `undefined` 或默认值 | 可选的筛选条件 |
 
+### 📁 Pipes (管道) - ParseOptionalBooleanPipe
+
+**ParseOptionalBooleanPipe 使用示例:**
+
+```typescript
+import { ParseOptionalBooleanPipe } from '@/common/pipes';
+
+// 可选布尔参数 - 基础用法
+@Query('isActive', new ParseOptionalBooleanPipe())
+isActive?: boolean;
+
+// 带默认值 - 默认显示激活项
+@Query('showInactive', new ParseOptionalBooleanPipe({ defaultValue: false }))
+showInactive: boolean;
+
+// 可选参数 - 未提供时返回 undefined
+@Query('verified', new ParseOptionalBooleanPipe())
+verified?: boolean;
+
+// 在 Controller 中组合使用
+@Get('whales')
+findAll(
+  @Query('isActive', new ParseOptionalBooleanPipe()) isActive?: boolean,
+  @Query('showInactive', new ParseOptionalBooleanPipe({ defaultValue: false }))
+  showInactive: boolean,
+  @Query('verified', new ParseOptionalBooleanPipe()) verified?: boolean,
+) {
+  return this.whalesService.findAll({ isActive, showInactive, verified });
+}
+```
+
+**ParseOptionalBooleanOptions 选项:**
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `defaultValue` | `boolean` | `undefined` | 默认值，当输入为空/undefined/null 时返回此值 |
+
+**支持的输入格式:**
+
+| 类型 | 真值 (→ `true`) | 假值 (→ `false`) | 空值 (→ `defaultValue`) |
+|------|----------------|-----------------|------------------------|
+| 字符串 | `'true'`, `'1'`, `'yes'`, `'on'`, `'y'` | `'false'`, `'0'`, `'no'`, `'off'`, `'n'` | `''`, `undefined`, `null` |
+| 布尔值 | `true` | `false` | - |
+
+**空值处理行为:**
+
+| 输入值 | 无默认值 | `defaultValue: true` | `defaultValue: false` |
+|--------|---------|---------------------|----------------------|
+| `undefined` | `undefined` | `true` | `false` |
+| `null` | `undefined` | `true` | `false` |
+| `''` (空字符串) | `undefined` | `true` | `false` |
+| `'true'` | `true` | `true` | `true` |
+| `'false'` | `false` | `false` | `false` |
+| `'invalid'` | ❌ 抛出异常 | ❌ 抛出异常 | ❌ 抛出异常 |
+
+**错误响应示例:**
+
+```json
+// 无效的布尔值
+{
+  "statusCode": 400,
+  "message": "isActive 必须是有效的布尔值 (true/false, 1/0, yes/no, on/off)",
+  "error": "Bad Request"
+}
+```
+
+**使用场景:**
+
+| 场景 | 示例 | 说明 |
+|------|------|------|
+| 可选筛选 | `?isActive=true` | 用户可选择是否筛选激活状态 |
+| 显示选项 | `?showInactive=1` | 默认隐藏，用户可选择显示 |
+| 高级过滤 | `?verified=yes` | 可选的验证状态过滤 |
+| 导出配置 | `?includeArchived=on` | 默认不包含，用户可选择包含 |
+
+**与相关管道对比:**
+
+| 管道 | 必填性 | 空值行为 | 典型场景 |
+|------|--------|----------|----------|
+| `ParseOptionalBooleanPipe` | 可选 | 返回 `undefined` 或默认值 | 可选的筛选条件、配置开关 |
+| `ParseBooleanPipe` | 必填 | 抛出异常 | 必须明确指定的布尔参数 |
+| `ParseOptionalIntPipe` | 可选 | 返回 `undefined` 或默认值 | 可选的数字参数 |
+
 ### 📁 Pipes (管道) - ParseStringPipe
 
 **ParseStringPipe 使用示例:**
