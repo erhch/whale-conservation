@@ -300,6 +300,459 @@ async function handleApiError(response: Response) {
 
 - (无)
 
+---
+
+### 🛡️ Guards 详细用法
+
+#### 1. JwtAuthGuard - JWT 认证守卫
+
+**功能:** 保护需要登录的路由，自动验证 JWT Token 并注入用户信息到请求对象。
+
+**特性:**
+- ✅ 自动验证 JWT Token 有效性
+- ✅ 支持 `@Public()` 装饰器跳过特定路由的认证
+- ✅ 认证通过后自动将用户信息注入 `request.user`
+- ✅ 配合 Passport JWT Strategy 使用
+
+**基本用法:**
+
+```typescript
+// 全局注册 (推荐) - main.ts
+import { JwtAuthGuard } from '@/common/guards';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  
+  // 全局启用 JWT 认证 (所有路由默认需要认证)
+  app.useGlobalGuards(new JwtAuthGuard(reflector));
+  
+  await app.listen(3000);
+}
+```
+
+```typescript
+// 控制器中使用 - 默认需要认证
+@Controller('users')
+export class UsersController {
+  // ✅ 需要认证 (因为全局注册了 JwtAuthGuard)
+  @Get('profile')
+  getProfile(@CurrentUser() user: User) {
+    return { userId: user.id, email: user.email };
+  }
+  
+  // ✅ 公开路由 (跳过认证)
+  @Public()
+  @Get('public-info')
+  getPublicInfo() {
+    return { message: '无需认证即可访问' };
+  }
+}
+```
+
+```typescript
+// 或者局部使用 (不全局注册时)
+@Controller('posts')
+export class PostsController {
+  @UseGuards(JwtAuthGuard)
+  @Post()
+  create(@Body() dto: CreatePostDto, @CurrentUser() user: User) {
+    return this.postsService.create({ ...dto, authorId: user.id });
+  }
+  
+  // 公开路由
+  @Public()
+  @Get()
+  findAll() {
+    return this.postsService.findAll();
+  }
+}
+```
+
+**认证流程:**
+
+```
+请求 → JwtAuthGuard 检查
+       ↓
+   有 @Public()?
+       ↓ 是
+   ✅ 允许访问 (跳过认证)
+       ↓ 否
+   检查 Authorization Header
+       ↓
+   验证 JWT Token
+       ↓ 有效
+   注入 user 到 request.user → 允许访问
+       ↓ 无效/缺失
+   ❌ 返回 401 Unauthorized
+```
+
+**错误响应示例:**
+
+```json
+// Token 缺失
+{
+  "statusCode": 401,
+  "message": "Unauthorized",
+  "timestamp": "2026-03-30T01:15:00.000Z",
+  "path": "/api/users/profile"
+}
+
+// Token 无效/过期
+{
+  "statusCode": 401,
+  "message": "Unauthorized",
+  "timestamp": "2026-03-30T01:15:00.000Z",
+  "path": "/api/users/profile"
+}
+```
+
+---
+
+#### 2. RolesGuard - RBAC 角色权限守卫
+
+**功能:** 基于角色的访问控制 (RBAC)，检查用户是否拥有访问路由所需的角色权限。
+
+**特性:**
+- ✅ 配合 `@Roles()` 装饰器使用
+- ✅ 支持单角色或多角色权限检查
+- ✅ 必须在 `JwtAuthGuard` 之后执行 (先认证，再授权)
+- ✅ 支持 UserRole 枚举类型
+
+**角色枚举 (UserRole):**
+
+```typescript
+enum UserRole {
+  USER = 'user',           // 普通用户
+  ADMIN = 'admin',         // 管理员
+  SUPER_ADMIN = 'super_admin'  // 超级管理员
+}
+```
+
+**基本用法:**
+
+```typescript
+// 全局注册 - main.ts
+import { JwtAuthGuard, RolesGuard } from '@/common/guards';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  const reflector = app.get(Reflector);
+  
+  // 注册顺序很重要：先认证守卫，再授权守卫
+  app.useGlobalGuards(
+    new JwtAuthGuard(reflector),
+    new RolesGuard(reflector)
+  );
+  
+  await app.listen(3000);
+}
+```
+
+```typescript
+// 控制器中使用
+@Controller('admin')
+export class AdminController {
+  // ✅ 仅管理员可访问
+  @Roles(UserRole.ADMIN)
+  @Get('users')
+  getAllUsers() {
+    return this.userService.findAll();
+  }
+  
+  // ✅ 仅超级管理员可访问
+  @Roles(UserRole.SUPER_ADMIN)
+  @Delete('users/:id')
+  deleteUser(@Param('id') id: string) {
+    return this.userService.remove(id);
+  }
+  
+  // ✅ 管理员或超级管理员都可访问 (多角色)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Post('users')
+  createUser(@Body() dto: CreateUserDto) {
+    return this.userService.create(dto);
+  }
+  
+  // ✅ 所有登录用户都可访问 (无角色限制)
+  @Get('profile')
+  getProfile(@CurrentUser() user: User) {
+    return user;
+  }
+}
+```
+
+**权限检查流程:**
+
+```
+请求 → JwtAuthGuard (认证)
+       ↓ 通过
+   RolesGuard 检查
+       ↓
+   路由有 @Roles()?
+       ↓ 否
+   ✅ 允许访问 (无角色限制)
+       ↓ 是
+   获取用户角色 (request.user.role)
+       ↓
+   用户角色在允许列表中?
+       ↓ 是
+   ✅ 允许访问
+       ↓ 否
+   ❌ 返回 403 Forbidden
+```
+
+**错误响应示例:**
+
+```json
+// 用户角色权限不足
+{
+  "statusCode": 403,
+  "message": "Insufficient permissions. Required roles: admin, super_admin",
+  "timestamp": "2026-03-30T01:15:00.000Z",
+  "path": "/api/admin/users"
+}
+```
+
+---
+
+### 🔐 认证与授权组合使用
+
+**典型场景:**
+
+```typescript
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
+import { JwtAuthGuard, RolesGuard } from '@/common/guards';
+import { Public, Roles, CurrentUser } from '@/common/decorators';
+import { UserRole } from '@/auth/entities/user.entity';
+
+@Controller('articles')
+export class ArticlesController {
+  constructor(private articlesService: ArticlesService) {}
+
+  // ✅ 公开：所有人可读
+  @Public()
+  @Get()
+  findAll() {
+    return this.articlesService.findAll();
+  }
+
+  // ✅ 公开：单篇详情可读
+  @Public()
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.articlesService.findOne(id);
+  }
+
+  // 🔒 认证：登录用户可创建
+  @Post()
+  create(
+    @Body() dto: CreateArticleDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.articlesService.create({ ...dto, authorId: user.id });
+  }
+
+  // 🔒 认证 + 角色：仅作者可编辑自己的文章
+  @Put(':id')
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateArticleDto,
+    @CurrentUser() user: User,
+  ) {
+    // 在 Service 层检查作者权限
+    return this.articlesService.update(id, dto, user.id);
+  }
+
+  // 🔒 管理员：仅管理员可删除任意文章
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.articlesService.remove(id);
+  }
+
+  // 🔒 超级管理员：仅超级管理员可管理审核状态
+  @Roles(UserRole.SUPER_ADMIN)
+  @Patch(':id/status')
+  updateStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateStatusDto,
+  ) {
+    return this.articlesService.updateStatus(id, dto);
+  }
+}
+```
+
+---
+
+### 📋 守卫注册方式对比
+
+| 注册方式 | 代码示例 | 适用场景 |
+|---------|---------|---------|
+| **全局注册** | `app.useGlobalGuards(new JwtAuthGuard())` | 大多数路由需要认证 (推荐) |
+| **控制器级** | `@UseGuards(JwtAuthGuard)` on controller class | 整个控制器需要统一保护 |
+| **路由级** | `@UseGuards(JwtAuthGuard)` on method | 仅特定路由需要保护 |
+| **组合使用** | `@UseGuards(JwtAuthGuard, RolesGuard)` | 认证 + 授权同时需要 |
+
+---
+
+### ⚠️ 注意事项与最佳实践
+
+**1. 守卫执行顺序:**
+
+```typescript
+// ✅ 正确：先认证，再授权
+app.useGlobalGuards(
+  new JwtAuthGuard(reflector),  // 第一层：验证身份
+  new RolesGuard(reflector)     // 第二层：检查权限
+);
+
+// ❌ 错误：顺序颠倒会导致 RolesGuard 拿不到 user 信息
+app.useGlobalGuards(
+  new RolesGuard(reflector),    // ❌ 此时 request.user 还未注入
+  new JwtAuthGuard(reflector)
+);
+```
+
+**2. @Public() 使用注意:**
+
+```typescript
+// ✅ 正确：@Public() 必须在路由方法上
+@Public()
+@Get('public')
+getPublic() { ... }
+
+// ❌ 错误：@Public() 放在 UseGuards 装饰器上无效
+@UseGuards(JwtAuthGuard)
+@Public()  // ❌ 无效
+@Get('wrong')
+getWrong() { ... }
+```
+
+**3. 角色权限设计建议:**
+
+```typescript
+// ✅ 推荐：使用枚举定义角色
+enum UserRole {
+  USER = 'user',
+  ADMIN = 'admin',
+  SUPER_ADMIN = 'super_admin'
+}
+
+// ✅ 推荐：角色层级清晰
+// USER: 基础功能 (创建/编辑自己的内容)
+// ADMIN: 管理功能 (管理用户/内容审核)
+// SUPER_ADMIN: 系统功能 (系统配置/权限管理)
+
+// ❌ 避免：硬编码字符串
+@Roles('admin')  // ❌ 容易拼写错误，难以维护
+```
+
+**4. 自定义权限检查:**
+
+```typescript
+// 对于复杂权限逻辑，在 Service 层处理
+@Injectable()
+export class ArticlesService {
+  async update(id: string, dto: UpdateDto, currentUserId: string) {
+    const article = await this.findOne(id);
+    
+    // 检查是否为作者或管理员
+    if (article.authorId !== currentUserId) {
+      const user = await this.userService.findById(currentUserId);
+      if (user.role !== UserRole.ADMIN && user.role !== UserRole.SUPER_ADMIN) {
+        throw new ForbiddenException('只能编辑自己的文章');
+      }
+    }
+    
+    return this.repo.update(id, dto);
+  }
+}
+```
+
+---
+
+### 🔍 调试技巧
+
+**1. 查看守卫执行日志:**
+
+```typescript
+// 在守卫中添加日志
+@Injectable()
+export class RolesGuard implements CanActivate {
+  canActivate(context: ExecutionContext): boolean {
+    const request = context.switchToHttp().getRequest();
+    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(ROLES_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    
+    console.log('RolesGuard check:', {
+      path: request.url,
+      user: request.user?.email,
+      userRole: request.user?.role,
+      requiredRoles,
+    });
+    
+    // ... 权限检查逻辑
+  }
+}
+```
+
+**2. 测试认证流程:**
+
+```bash
+# 测试公开路由 (无需 Token)
+curl http://localhost:3000/api/articles/public
+
+# 测试需要认证的路由 (无 Token)
+curl http://localhost:3000/api/users/profile
+# 预期：401 Unauthorized
+
+# 测试需要认证的路由 (有效 Token)
+curl -H "Authorization: Bearer <your-jwt-token>" \
+     http://localhost:3000/api/users/profile
+# 预期：200 OK + 用户信息
+
+# 测试需要角色的路由 (权限不足)
+curl -H "Authorization: Bearer <user-token>" \
+     http://localhost:3000/api/admin/users
+# 预期：403 Forbidden
+
+# 测试需要角色的路由 (权限充足)
+curl -H "Authorization: Bearer <admin-token>" \
+     http://localhost:3000/api/admin/users
+# 预期：200 OK + 用户列表
+```
+
+---
+
+### 📊 守卫快速参考
+
+| 守卫 | 功能 | 配合装饰器 | 常见状态码 |
+|-----|------|-----------|-----------|
+| `JwtAuthGuard` | JWT 认证 | `@Public()` 跳过认证 | 401 Unauthorized |
+| `RolesGuard` | RBAC 角色权限 | `@Roles(...)` 指定角色 | 403 Forbidden |
+
+**典型响应:**
+
+| 场景 | 状态码 | 说明 |
+|-----|-------|------|
+| Token 缺失 | 401 | 需要登录 |
+| Token 无效/过期 | 401 | 重新登录 |
+| 角色权限不足 | 403 | 权限不够 |
+| 认证通过 | 200 | 正常访问 |
+
+---
+
 ### 📁 Interceptors (拦截器)
 
 ✅ 已实现:
