@@ -3470,6 +3470,246 @@ export class SightingsController {
 
 ---
 
+### 📁 Pipes (管道) - PaginationPipe
+
+`PaginationPipe` 用于统一处理列表接口的分页参数 (`page`, `limit`)，提供默认值、范围验证和自动计算偏移量。
+
+**使用场景:**
+
+| 场景 | 示例 | 说明 |
+|------|------|------|
+| 列表查询 | `GET /whales?page=2&limit=20` | 标准分页查询 |
+| 观测记录 | `GET /sightings?page=1&limit=50` | 观测记录分页 |
+| 物种列表 | `GET /species?limit=10` | 仅指定每页数量 |
+| 志愿者名单 | `GET /volunteers?page=3` | 仅指定页码 |
+| 捐赠记录 | `GET /donations?page=1&limit=100` | 最大每页数量 |
+
+**基础用法:**
+
+```typescript
+import { Controller, Get, Query } from '@nestjs/common';
+import { PaginationPipe, PaginationResult } from '@/common/pipes';
+
+@Controller('whales')
+export class WhalesController {
+  @Get()
+  findAll(
+    @Query(new PaginationPipe()) pagination: PaginationResult
+  ) {
+    // pagination = { page: 1, limit: 10, offset: 0 }
+    return this.whalesService.findAll(pagination);
+  }
+}
+```
+
+**完整示例 - 鲸鱼列表查询:**
+
+```typescript
+import { Controller, Get, Query } from '@nestjs/common';
+import { 
+  PaginationPipe, 
+  PaginationResult,
+  ParseOptionalStringPipe,
+  ParseOptionalIntPipe
+} from '@/common/pipes';
+
+@Controller('whales')
+export class WhalesController {
+  @Get()
+  findAll(
+    // 分页参数 - 使用 PaginationPipe 统一处理
+    @Query(new PaginationPipe({ 
+      defaultPage: 1, 
+      defaultLimit: 20,
+      maxLimit: 100 
+    })) pagination: PaginationResult,
+    
+    // 可选筛选参数
+    @Query('speciesId', new ParseOptionalIntPipe()) speciesId?: number,
+    @Query('status', new ParseOptionalStringPipe({ trim: true })) status?: string,
+  ) {
+    return this.whalesService.findAll({
+      page: pagination.page,
+      limit: pagination.limit,
+      offset: pagination.offset,
+      speciesId,
+      status,
+    });
+  }
+}
+```
+
+**服务层使用示例:**
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Whale } from './entities/whale.entity';
+
+export interface WhaleQueryOptions {
+  page: number;
+  limit: number;
+  offset: number;
+  speciesId?: number;
+  status?: string;
+}
+
+@Injectable()
+export class WhalesService {
+  constructor(
+    @InjectRepository(Whale)
+    private whalesRepository: Repository<Whale>,
+  ) {}
+
+  async findAll(options: WhaleQueryOptions) {
+    const { page, limit, offset, speciesId, status } = options;
+
+    // 构建查询条件
+    const where: any = {};
+    if (speciesId) where.speciesId = speciesId;
+    if (status) where.status = status;
+
+    // 执行分页查询
+    const [data, total] = await this.whalesRepository.findAndCount({
+      where,
+      skip: offset,  // 使用 PaginationPipe 计算的 offset
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
+
+    // 返回分页结果
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+}
+```
+
+**配置选项:**
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `defaultPage` | `number` | `1` | 默认页码 (从 1 开始) |
+| `defaultLimit` | `number` | `10` | 默认每页数量 |
+| `minPage` | `number` | `1` | 最小页码 |
+| `minLimit` | `number` | `1` | 最小每页数量 |
+| `maxLimit` | `number` | `100` | 最大每页数量 (防止过度查询) |
+
+**自定义配置示例:**
+
+```typescript
+// 小数据量列表 - 每页显示更多
+@Query(new PaginationPipe({ 
+  defaultLimit: 50, 
+  maxLimit: 200 
+})) pagination: PaginationResult;
+
+// 大数据量列表 - 限制每页数量
+@Query(new PaginationPipe({ 
+  defaultLimit: 10, 
+  maxLimit: 50 
+})) pagination: PaginationResult;
+
+// 严格页码验证 - 不允许第 0 页
+@Query(new PaginationPipe({ 
+  minPage: 1 
+})) pagination: PaginationResult;
+```
+
+**返回的 PaginationResult 结构:**
+
+```typescript
+interface PaginationResult {
+  page: number;    // 当前页码 (从 1 开始)
+  limit: number;   // 每页数量
+  offset: number;  // 偏移量 (用于数据库 OFFSET)
+}
+```
+
+**offset 自动计算:**
+
+```
+page=1, limit=10  →  offset = (1-1) * 10 = 0
+page=2, limit=10  →  offset = (2-1) * 10 = 10
+page=3, limit=20  →  offset = (3-1) * 20 = 40
+page=5, limit=50  →  offset = (5-1) * 50 = 200
+```
+
+**验证规则:**
+
+- 页码必须 ≥ `minPage` (默认 1)
+- 每页数量必须 ≥ `minLimit` (默认 1)
+- 每页数量必须 ≤ `maxLimit` (默认 100)
+- 无效参数自动使用默认值 (不会抛出异常)
+
+**错误消息示例:**
+
+```
+- "页码不能小于 1"
+- "每页数量不能小于 1"
+- "每页数量不能超过 100"
+```
+
+**错误响应示例:**
+
+```json
+// 页码过小
+{
+  "statusCode": 400,
+  "message": "页码不能小于 1",
+  "timestamp": "2026-03-30T12:45:00.000Z",
+  "path": "/api/v1/whales"
+}
+
+// 每页数量过大
+{
+  "statusCode": 400,
+  "message": "每页数量不能超过 100",
+  "timestamp": "2026-03-30T12:45:00.000Z",
+  "path": "/api/v1/sightings"
+}
+```
+
+**支持的查询参数格式:**
+
+| 参数 | 说明 | 示例 |
+|------|------|------|
+| `page` | 页码 (从 1 开始) | `?page=2` |
+| `limit` | 每页数量 | `?limit=20` |
+| `size` | 每页数量 (别名) | `?size=20` |
+
+**注意事项:**
+
+1. ✅ **自动计算 offset** - 无需手动计算，直接使用 `pagination.offset`
+2. ✅ **防止过度查询** - `maxLimit` 限制单次查询最大数据量，保护数据库
+3. ✅ **容错处理** - 无效参数自动使用默认值，不会导致查询失败
+4. ✅ **TypeORM 兼容** - `skip`/`take` 与 `offset`/`limit` 完美配合
+5. ⚠️ **页码从 1 开始** - 符合用户习惯，区别于从 0 开始的编程惯例
+6. ⚠️ **大表性能** - 深层分页 (`page` 很大) 时考虑使用游标分页优化
+
+**性能优化建议:**
+
+```typescript
+// 对于大数据量表，限制最大页码
+@Query(new PaginationPipe({ 
+  maxLimit: 50,  // 降低每页上限
+})) pagination: PaginationResult;
+
+// 或者在业务层限制最大页码
+if (pagination.page > 100) {
+  throw new BadRequestException('最多支持 100 页');
+}
+```
+
+---
+
 ✅ 已实现:
 
 - `@Public()` - 标记公开路由 (跳过 JWT 认证)
