@@ -585,9 +585,11 @@ findAllSpecies() {
 - 详细文档：`src/common/README.md`
 - API 示例：`docs/api-examples.md`
 - 数据库设计：`docs/database-design.md`
+- **布尔值验证**：`docs/parse-boolean-pipe.md` (布尔值解析管道，支持 true/false/1/0/yes/no/on/off)
 - **坐标验证**：`docs/parse-coordinate-pipe.md` (GPS 坐标管道使用指南)
 - **手机验证**：`docs/parse-phone-pipe.md` (中国大陆手机号格式验证)
 - **邮箱验证**：`docs/parse-email-pipe.md` (邮箱格式验证)
+- **UUID 验证**：`docs/parse-uuid-pipe.md` (UUID v1-v5 版本验证)
 
 ---
 
