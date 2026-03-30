@@ -585,6 +585,7 @@ findAllSpecies() {
 - 详细文档：`src/common/README.md`
 - API 示例：`docs/api-examples.md`
 - 数据库设计：`docs/database-design.md`
+- **坐标验证**：`docs/parse-coordinate-pipe.md` (GPS 坐标管道使用指南)
 
 ---
 
