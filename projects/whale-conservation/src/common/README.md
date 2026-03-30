@@ -48,17 +48,245 @@ app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 }
 ```
 
-**统一错误响应格式:**
+---
 
-```json
-{
-  "statusCode": 404,
-  "timestamp": "2026-03-27T13:30:00.000Z",
-  "path": "/api/v1/whales/999",
-  "message": "鲸鱼个体不存在",
-  "error": "Not Found"
+### Filters 详细用法
+
+#### 1. HttpExceptionFilter - HTTP 异常过滤器
+
+**作用:** 捕获所有 `HttpException` 及其子类异常，统一格式化错误响应。
+
+**捕获的异常类型:**
+- `HttpException` - 基础 HTTP 异常
+- `BadRequestException` - 400 请求错误
+- `UnauthorizedException` - 401 未授权
+- `ForbiddenException` - 403 禁止访问
+- `NotFoundException` - 404 资源不存在
+- `ConflictException` - 409 资源冲突
+- `InternalServerErrorException` - 500 服务器错误
+- 所有其他 `HttpException` 子类
+
+**使用场景:**
+
+```typescript
+// 在控制器中抛出标准 HTTP 异常
+@Get('whales/:id')
+findOne(@Param('id') id: string) {
+  const whale = this.whalesService.findOne(id);
+  if (!whale) {
+    throw new NotFoundException(`鲸鱼个体 ${id} 不存在`);
+  }
+  return whale;
+}
+
+// 抛出带错误码的异常
+throw new BadRequestException({
+  message: '参数验证失败',
+  error: 'InvalidParams',
+  details: [{ field: 'latitude', message: '必须是 -90 到 90 之间的数字' }]
+});
+```
+
+**响应格式说明:**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `statusCode` | number | HTTP 状态码 (400/401/404/500 等) |
+| `timestamp` | string | ISO 8601 格式时间戳 |
+| `path` | string | 请求路径 |
+| `message` | string \| string[] | 错误消息 (可能是字符串或数组) |
+| `error` | string | 错误类型名称 (可选) |
+
+---
+
+#### 2. AllExceptionsFilter - 全局异常过滤器
+
+**作用:** 捕获所有未被处理的异常，作为最后一道防线，防止服务器崩溃并返回友好的错误响应。
+
+**捕获的异常类型:**
+- 未捕获的 JavaScript 异常
+- 数据库连接错误
+- 第三方 API 调用失败
+- 代码逻辑错误
+- 所有未被 `HttpExceptionFilter` 捕获的异常
+
+**使用场景:**
+
+```typescript
+// 未捕获的异常会被 AllExceptionsFilter 捕获
+@Get('whales/:id/sightings')
+async getSightings(@Param('id') id: string) {
+  // 如果数据库连接失败，会被 AllExceptionsFilter 捕获
+  return this.sightingsService.findByWhaleId(id);
+}
+
+// 第三方 API 调用失败
+@Get('weather/:stationId')
+async getWeather(@Param('stationId') id: string) {
+  // 如果天气 API 超时或失败，会被捕获
+  return this.weatherService.getCurrent(id);
 }
 ```
+
+**日志记录建议:**
+
+```typescript
+// 在 AllExceptionsFilter 中添加日志记录
+@Catch()
+export class AllExceptionsFilter implements ExceptionFilter {
+  private readonly logger = new Logger(AllExceptionsFilter.name);
+
+  catch(exception: unknown, host: ArgumentsHost) {
+    // 记录详细错误日志用于排查
+    this.logger.error('未捕获的异常:', exception);
+    
+    // ... 其余处理逻辑
+  }
+}
+```
+
+---
+
+### 过滤器注册顺序
+
+在 `main.ts` 中注册过滤器的推荐顺序:
+
+```typescript
+import { HttpExceptionFilter, AllExceptionsFilter } from '@/common/filters';
+import { LoggingInterceptor, TransformInterceptor } from '@/common/interceptors';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  
+  // 1. 先注册过滤器 (异常处理)
+  app.useGlobalFilters(
+    new HttpExceptionFilter(),      // 先处理标准 HTTP 异常
+    new AllExceptionsFilter()       // 再处理所有其他异常 (兜底)
+  );
+  
+  // 2. 再注册拦截器 (请求/响应处理)
+  app.useGlobalInterceptors(
+    new LoggingInterceptor(),       // 日志记录 (最先执行)
+    new TransformInterceptor()      // 响应转换
+  );
+  
+  await app.listen(3000);
+}
+```
+
+**执行顺序:**
+1. 请求进入 → `LoggingInterceptor` (记录请求)
+2. 控制器执行 → 可能抛出异常
+3. 异常抛出 → `HttpExceptionFilter` (如果是 HTTP 异常)
+4. 未处理异常 → `AllExceptionsFilter` (兜底捕获)
+5. 响应返回 → `TransformInterceptor` (格式化响应)
+6. 响应发出 → `LoggingInterceptor` (记录响应)
+
+---
+
+### 常见 HTTP 状态码参考
+
+| 状态码 | 异常类 | 说明 | 示例场景 |
+|--------|--------|------|----------|
+| 400 | `BadRequestException` | 请求参数错误 | 经纬度超出范围、必填字段缺失 |
+| 401 | `UnauthorizedException` | 未认证 | Token 缺失或过期 |
+| 403 | `ForbiddenException` | 禁止访问 | 用户角色权限不足 |
+| 404 | `NotFoundException` | 资源不存在 | 鲸鱼 ID 不存在、观测站不存在 |
+| 409 | `ConflictException` | 资源冲突 | 重复的观测记录、唯一约束冲突 |
+| 422 | `UnprocessableEntityException` | 数据验证失败 | 数据格式错误 |
+| 500 | `InternalServerErrorException` | 服务器错误 | 数据库连接失败、代码 bug |
+| 503 | `ServiceUnavailableException` | 服务不可用 | 外部 API 超时、系统维护 |
+
+---
+
+### 自定义异常响应
+
+**场景:** 需要返回更详细的错误信息时
+
+```typescript
+// 自定义错误响应格式
+throw new HttpException(
+  {
+    statusCode: 400,
+    message: '观测数据验证失败',
+    error: 'ValidationFailed',
+    details: [
+      { field: 'latitude', message: '必须在 -90 到 90 之间' },
+      { field: 'longitude', message: '必须在 -180 到 180 之间' },
+      { field: 'timestamp', message: '不能是未来时间' }
+    ],
+    timestamp: new Date().toISOString(),
+    path: '/api/v1/sightings'
+  },
+  HttpStatus.BAD_REQUEST
+);
+```
+
+---
+
+### 最佳实践
+
+**✅ 推荐:**
+
+1. **统一错误格式** - 所有错误响应保持相同结构，便于前端处理
+2. **使用语义化异常** - 选择正确的异常类型 (NotFoundException vs BadRequestException)
+3. **提供有意义的错误消息** - 避免暴露敏感信息，但要有足够信息用于排查
+4. **记录详细日志** - 在过滤器中记录完整错误堆栈用于排查
+5. **兜底保护** - AllExceptionsFilter 确保没有异常会直接暴露给用户
+
+**❌ 避免:**
+
+1. **直接抛出原始错误** - 不要返回数据库错误、堆栈跟踪等敏感信息
+2. **模糊的错误消息** - 避免只返回"出错了"，要说明具体原因
+3. **在过滤器中处理业务逻辑** - 过滤器只负责格式化，业务验证应在控制器/服务层
+4. **忘记注册 AllExceptionsFilter** - 未捕获的异常会导致服务器崩溃
+
+---
+
+### 与前端集成
+
+**前端错误处理示例 (TypeScript):**
+
+```typescript
+interface ErrorResponse {
+  statusCode: number;
+  timestamp: string;
+  path: string;
+  message: string | string[];
+  error?: string;
+  details?: Array<{ field: string; message: string }>;
+}
+
+async function handleApiError(response: Response) {
+  if (!response.ok) {
+    const error: ErrorResponse = await response.json();
+    
+    switch (error.statusCode) {
+      case 400:
+        // 显示表单验证错误
+        showValidationErrors(error.details);
+        break;
+      case 401:
+        // 跳转到登录页
+        redirectToLogin();
+        break;
+      case 403:
+        // 显示权限不足提示
+        showPermissionDenied();
+        break;
+      case 404:
+        // 显示资源不存在
+        showNotFound(error.message);
+        break;
+      default:
+        // 显示通用错误
+        showError(error.message);
+    }
+  }
+}
+```
+
+---
 
 ### 📁 Guards (路由守卫)
 
