@@ -23,13 +23,180 @@ auth/
 ├── auth.service.ts         # 认证服务 (业务逻辑)
 ├── auth.module.ts          # 模块定义
 ├── strategies/
-│   └── jwt.strategy.ts     # JWT 验证策略
+│   ├── jwt.strategy.ts     # JWT 验证策略
+│   └── local.strategy.ts   # 本地认证策略 (用户名密码)
 ├── entities/
 │   └── user.entity.ts      # 用户实体
 └── dto/
     ├── register.dto.ts     # 注册请求 DTO
     └── login.dto.ts        # 登录请求 DTO
 ```
+
+## 🔑 认证策略 (Strategies)
+
+Auth 模块使用 Passport.js 策略来处理不同的认证方式。
+
+### LocalStrategy - 本地认证策略
+
+用于处理用户名密码登录认证。
+
+**实现位置:** `auth/strategies/local.strategy.ts`
+
+**配置说明:**
+
+```typescript
+import { Strategy } from 'passport-local';
+
+// 配置字段名
+super({
+  usernameField: 'username',  // 登录表单中的用户名字段
+  passwordField: 'password',  // 登录表单中的密码字段
+});
+```
+
+**验证流程:**
+
+1. 用户提交登录请求 (POST `/api/v1/auth/login`)
+2. `LocalStrategy` 提取用户名和密码
+3. 调用 `AuthService.validateUser()` 验证凭据
+4. 验证成功返回用户对象，失败抛出 `UnauthorizedException`
+
+**使用示例:**
+
+```typescript
+// auth.controller.ts
+@UseGuards(LocalAuthGuard)
+@Post('login')
+async login(@User() user: User, @Res() res: Response) {
+  const { access_token } = await this.authService.login(user);
+  return res.json({ access_token });
+}
+
+// auth.guard.ts
+@Injectable()
+export class LocalAuthGuard extends AuthGuard('local') {}
+```
+
+**错误处理:**
+
+```typescript
+// 用户名或密码错误
+{
+  "statusCode": 401,
+  "message": "用户名或密码错误"
+}
+
+// 用户被禁用
+{
+  "statusCode": 401,
+  "message": "用户不存在或已被禁用"
+}
+```
+
+---
+
+### JwtStrategy - JWT 认证策略
+
+用于验证 JWT Token 并提取用户信息。
+
+**实现位置:** `auth/strategies/jwt.strategy.ts`
+
+**配置说明:**
+
+```typescript
+import { Strategy } from 'passport-jwt';
+
+super({
+  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), // 从 Authorization 头提取
+  ignoreExpiration: false,  // 不忽略过期时间
+  secretOrKey: configService.get('JWT_SECRET'), // JWT 密钥
+});
+```
+
+**Token 结构:**
+
+```typescript
+// JWT Payload
+{
+  "sub": "usr_abc123",      // 用户 ID
+  "email": "user@example.com",
+  "role": "researcher",
+  "iat": 1711612800,        // 签发时间
+  "exp": 1711699200         // 过期时间 (24 小时后)
+}
+```
+
+**验证流程:**
+
+1. 请求携带 `Authorization: Bearer <token>` 头
+2. `JwtStrategy` 提取并验证 Token
+3. 根据 `sub` (用户 ID) 从数据库查询用户
+4. 检查用户是否存在且 `isActive === true`
+5. 验证成功返回用户对象，附加到 `request.user`
+
+**使用示例:**
+
+```typescript
+// 受保护的路由
+@UseGuards(JwtAuthGuard)
+@Get('profile')
+async getProfile(@CurrentUser() user: User) {
+  return user; // user 已从 request.user 提取
+}
+
+// 带角色保护的路由
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin')
+@Get('users')
+async getAllUsers() {
+  return this.authService.findAll();
+}
+```
+
+**JwtAuthGuard 实现:**
+
+```typescript
+// auth/guards/jwt-auth.guard.ts
+@Injectable()
+export class JwtAuthGuard extends AuthGuard('jwt') {}
+```
+
+**错误处理:**
+
+```typescript
+// Token 缺失
+{
+  "statusCode": 401,
+  "message": "Unauthorized"
+}
+
+// Token 过期
+{
+  "statusCode": 401,
+  "message": "Unauthorized"
+}
+
+// 用户不存在或被禁用
+{
+  "statusCode": 401,
+  "message": "用户不存在或已被禁用"
+}
+```
+
+---
+
+### 策略对比
+
+| 特性 | LocalStrategy | JwtStrategy |
+|------|---------------|-------------|
+| **用途** | 用户登录 | API 认证 |
+| **认证方式** | 用户名 + 密码 | JWT Token |
+| **请求头** | `Content-Type: application/json` | `Authorization: Bearer <token>` |
+| **状态** | 有状态 (Session) | 无状态 (Stateless) |
+| **适用场景** | 登录接口 | 受保护的 API 接口 |
+| **Token 有效期** | N/A | 24 小时 (可配置) |
+
+---
 
 ## 🚀 快速开始
 
