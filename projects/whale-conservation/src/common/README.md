@@ -2823,6 +2823,157 @@ async filterSightings(
 
 ---
 
+### 📁 Pipes (管道) - ParseEnumPipe
+
+`ParseEnumPipe` 用于验证参数是否为有效的枚举值，支持必填/可选模式、默认值设置和自动错误提示。
+
+**使用场景:**
+
+| 场景 | 示例 | 说明 |
+|------|------|------|
+| 性别筛选 | `?sex=M` | 验证性别枚举 (M/F/U) |
+| 生命状态 | `?status=ALIVE` | 验证生命状态 (ALIVE/DECEASED/MISSING) |
+| 保护等级 | `?iucnStatus=EN` | 验证 IUCN 保护等级 (LC/NT/VU/EN/CR) |
+| 观测状态 | `?sightingStatus=CONFIRMED` | 验证观测状态 (PENDING/CONFIRMED/VERIFIED) |
+| 站点状态 | `?stationStatus=ACTIVE` | 验证监测站点状态 (ACTIVE/INACTIVE/MAINTENANCE) |
+
+**基础用法:**
+
+```typescript
+import { ParseEnumPipe } from '@/common/pipes';
+import { Sex, LifeStatus } from '@/whales/entities/whale.entity';
+import { IUCNStatus } from '@/species/entities/species.entity';
+
+// 可选枚举参数 - 支持默认值
+@Query('sex', new ParseEnumPipe({ enumType: Sex }))
+sex?: Sex;
+
+// 必填枚举参数
+@Query('iucnStatus', new ParseEnumPipe({ 
+  enumType: IUCNStatus,
+  required: true 
+}))
+iucnStatus: IUCNStatus;
+
+// 带默认值的枚举参数
+@Query('status', new ParseEnumPipe({ 
+  enumType: LifeStatus,
+  defaultValue: LifeStatus.ALIVE 
+}))
+status: LifeStatus;
+```
+
+**完整示例 - 多枚举筛选:**
+
+```typescript
+import { Controller, Get, Query } from '@nestjs/common';
+import { ParseEnumPipe, ParseOptionalIntPipe } from '@/common/pipes';
+import { Sex, LifeStatus } from '@/whales/entities/whale.entity';
+import { IUCNStatus } from '@/species/entities/species.entity';
+
+@Controller('whales')
+export class WhalesController {
+  @Get()
+  findAll(
+    @Query('page', new ParseOptionalIntPipe({ defaultValue: 1 })) page: number,
+    @Query('pageSize', new ParseOptionalIntPipe({ defaultValue: 20 })) pageSize: number,
+    @Query('sex', new ParseEnumPipe({ enumType: Sex })) sex?: Sex,
+    @Query('status', new ParseEnumPipe({ enumType: LifeStatus })) status?: LifeStatus,
+    @Query('protectionLevel', new ParseEnumPipe({ enumType: IUCNStatus })) protectionLevel?: IUCNStatus,
+  ) {
+    return this.whalesService.findAll({ page, pageSize, sex, status, protectionLevel });
+  }
+}
+```
+
+**配置选项:**
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `enumType` | `Type/Record` | **必填** | 枚举类型对象 |
+| `defaultValue` | `any` | `undefined` | 当参数为空时的默认值 |
+| `required` | `boolean` | `false` | 是否必填，`true` 时空值抛出异常 |
+
+**验证规则:**
+
+| 规则 | 说明 |
+|------|------|
+| 枚举匹配 | 输入值必须是枚举的有效字符串值之一 |
+| 自动转换 | 返回对应的枚举值 (而非字符串) |
+| 空值处理 | 非必填时返回 `undefined` 或 `defaultValue` |
+| 错误提示 | 自动列出所有有效值供参考 |
+
+**错误响应示例:**
+
+```json
+// 必填项为空
+{
+  "statusCode": 400,
+  "message": "iucnStatus 是必填项",
+  "error": "Bad Request"
+}
+
+// 无效的枚举值
+{
+  "statusCode": 400,
+  "message": "sex 必须是以下值之一：M, F, U",
+  "error": "Bad Request"
+}
+```
+
+**常见枚举类型示例:**
+
+```typescript
+// 性别枚举
+export enum Sex {
+  MALE = 'M',
+  FEMALE = 'F',
+  UNKNOWN = 'U'
+}
+
+// 生命状态枚举
+export enum LifeStatus {
+  ALIVE = 'ALIVE',
+  DECEASED = 'DECEASED',
+  MISSING = 'MISSING'
+}
+
+// IUCN 保护等级枚举
+export enum IUCNStatus {
+  LEAST_CONCERN = 'LC',
+  NEAR_THREATENED = 'NT',
+  VULNERABLE = 'VU',
+  ENDANGERED = 'EN',
+  CRITICALLY_ENDANGERED = 'CR'
+}
+
+// 观测状态枚举
+export enum SightingStatus {
+  PENDING = 'PENDING',
+  CONFIRMED = 'CONFIRMED',
+  VERIFIED = 'VERIFIED'
+}
+```
+
+**使用场景对比:**
+
+| 场景 | 推荐管道 | 说明 |
+|------|----------|------|
+| 固定选项筛选 | `ParseEnumPipe` | 选项固定且预定义为枚举 |
+| 字符串选项 | `ParseStringPipe` + `enum` | 简单字符串列表验证 |
+| 多选枚举 | `ParseArrayPipe` + `enum` | 多个枚举值 (逗号分隔) |
+| 数字状态码 | `ParseIntPipe` + 自定义验证 | 数字型状态码 |
+
+**最佳实践:**
+
+1. ✅ **优先使用枚举** - 比字符串常量更安全，支持 IDE 自动补全
+2. ✅ **明确必填/可选** - 根据业务逻辑设置 `required` 选项
+3. ✅ **提供默认值** - 对于有合理默认值的场景使用 `defaultValue`
+4. ✅ **错误消息清晰** - 自动列出有效值，帮助用户快速修正
+5. ⚠️ **枚举值变更** - 修改枚举定义时注意向后兼容性
+
+---
+
 ### 📁 Pipes (管道) - ParseUrlPipe
 
 `ParseUrlPipe` 用于验证 URL 地址格式，支持协议白名单、域名/IP 验证和必填/可选模式。
