@@ -585,6 +585,8 @@ findAllSpecies() {
 - 详细文档：`src/common/README.md`
 - API 示例：`docs/api-examples.md`
 - 数据库设计：`docs/database-design.md`
+- **Guards 认证授权**：`docs/guards.md` (JWT 认证和 RBAC 角色权限控制)
+- **Filters 异常处理**：`docs/filters.md` (统一错误响应格式)
 - **布尔值验证**：`docs/parse-boolean-pipe.md` (布尔值解析管道，支持 true/false/1/0/yes/no/on/off)
 - **坐标验证**：`docs/parse-coordinate-pipe.md` (GPS 坐标管道使用指南)
 - **手机验证**：`docs/parse-phone-pipe.md` (中国大陆手机号格式验证)
