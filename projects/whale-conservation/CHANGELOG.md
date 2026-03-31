@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Common Pipes
 - `ParseJSONPipe` - JSON string parsing with optional validation support
+- **ParseJSONPipe Tests** - Comprehensive unit tests (40 test cases) covering:
+  - Basic JSON parsing (objects, arrays, primitives, nested structures)
+  - Unicode and special character handling
+  - Null/undefined/empty value handling
+  - Invalid JSON rejection
+  - Custom error messages
+  - Custom validation functions
+  - Real-world scenarios (filters, sorting, whale sighting data)
+  - Edge cases and performance tests
 
 ### Planned
 - Stats API dashboard integration
