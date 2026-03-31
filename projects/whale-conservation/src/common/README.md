@@ -1570,6 +1570,7 @@ export class LoggingInterceptor implements NestInterceptor {
 - `ParseCoordinatePipe` - GPS 坐标解析管道 (纬度/经度范围验证)
 - `ParseCoordinatePairPipe` - 坐标对解析管道 (同时验证纬度和经度)
 - `ParseArrayPipe` - 数组解析管道 (逗号分隔字符串转数组，支持类型转换和枚举验证)
+- `ParseJSONPipe` - JSON 字符串解析管道 (支持可选验证函数、自定义错误消息)
 
 **使用示例:**
 

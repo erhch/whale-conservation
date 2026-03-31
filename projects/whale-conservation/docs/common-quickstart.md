@@ -590,6 +590,7 @@ findAllSpecies() {
 - **手机验证**：`docs/parse-phone-pipe.md` (中国大陆手机号格式验证)
 - **邮箱验证**：`docs/parse-email-pipe.md` (邮箱格式验证)
 - **UUID 验证**：`docs/parse-uuid-pipe.md` (UUID v1-v5 版本验证)
+- **JSON 解析**：`docs/parse-json-pipe.md` (JSON 字符串解析管道，支持可选验证函数)
 
 ---
 
