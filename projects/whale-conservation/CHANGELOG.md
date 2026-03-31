@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Common Pipes
+- `ParseJSONPipe` - JSON string parsing with optional validation support
+
 ### Planned
 - Stats API dashboard integration
 - Enhanced reporting features
