@@ -18,16 +18,18 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@/*": ["src/*"],
-      "@common/*": ["src/common/*"],
-      "@auth/*": ["src/auth/*"],
-      "@species/*": ["src/species/*"],
-      "@whales/*": ["src/whales/*"],
-      "@sightings/*": ["src/sightings/*"],
-      "@stations/*": ["src/stations/*"],
-      "@stats/*": ["src/stats/*"]
+      "@/*": ["./*"],
+      "@common/*": ["./common/*"],
+      "@auth/*": ["./auth/*"],
+      "@species/*": ["./species/*"],
+      "@whales/*": ["./whales/*"],
+      "@sightings/*": ["./sightings/*"],
+      "@stations/*": ["./stations/*"],
+      "@stats/*": ["./stats/*"],
+      "@environment/*": ["./environment/*"],
+      "@health/*": ["./health/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["**/*"],
   "exclude": ["node_modules", "dist"]
 }
