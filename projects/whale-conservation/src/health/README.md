@@ -25,6 +25,8 @@ Health Module 提供标准的健康检查端点，用于：
 health/
 ├── health.controller.ts    # 健康检查控制器
 ├── health.module.ts        # 模块定义
+├── tests/                  # 单元测试目录
+│   └── health.controller.spec.ts  # 控制器测试
 └── README.md               # 本文档
 ```
 
@@ -412,6 +414,29 @@ groups:
 3. **检查频率** - 避免过于频繁的健康检查（建议 10-30 秒间隔）
 4. **超时设置** - 健康检查应快速响应（建议超时 5 秒内）
 5. **数据库连接池** - 健康检查不会耗尽数据库连接池
+
+---
+
+## 🧪 测试
+
+运行健康模块的单元测试：
+
+```bash
+# 运行所有测试
+npm test
+
+# 运行健康模块测试
+npm test -- health.controller.spec.ts
+
+# 运行测试并生成覆盖率报告
+npm run test:cov
+```
+
+**测试覆盖:**
+
+- ✅ `check()` - 完整健康检查（数据库 + 内存）
+- ✅ `liveness()` - 简化存活检查
+- ✅ `readiness()` - 就绪检查（仅数据库）
 
 ---
 
