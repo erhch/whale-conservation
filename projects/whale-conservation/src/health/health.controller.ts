@@ -10,7 +10,9 @@ import {
   MemoryHealthIndicator,
   HealthCheckResult,
 } from '@nestjs/terminus';
+import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
 
+@ApiTags('health')
 @Controller('health')
 export class HealthController {
   constructor(
@@ -52,5 +54,42 @@ export class HealthController {
     return this.health.check([
       () => this.db.pingCheck('database'),
     ]);
+  }
+
+  /**
+   * 版本信息
+   */
+  @Get('version')
+  @ApiOperation({ summary: '获取应用版本信息' })
+  @ApiOkResponse({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', example: 'whale-conservation-api' },
+        version: { type: 'string', example: '0.1.0' },
+        description: { type: 'string', example: '鲸类保护公益组织管理系统 - 后端 API' },
+        nodeVersion: { type: 'string', example: 'v20.11.0' },
+        uptime: { type: 'number', example: 3600 },
+        timestamp: { type: 'string', example: '2026-03-31T12:00:00.000Z' },
+      },
+    },
+  })
+  async version(): Promise<{
+    name: string;
+    version: string;
+    description: string;
+    nodeVersion: string;
+    uptime: number;
+    timestamp: string;
+  }> {
+    const pkg = require('../package.json');
+    return {
+      name: pkg.name,
+      version: pkg.version,
+      description: pkg.description,
+      nodeVersion: process.version,
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+    };
   }
 }

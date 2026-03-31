@@ -1,9 +1,9 @@
 # 🏥 Health Module - 健康检查模块
 
-> 提供系统健康检查端点，用于监控服务状态、数据库连接和内存使用
+> 提供系统健康检查端点，用于监控服务状态、数据库连接、内存使用和版本信息
 
-**版本:** 1.0.0  
-**最后更新:** 2026-03-30  
+**版本:** 1.1.0  
+**最后更新:** 2026-03-31  
 **状态:** ✅ 完成
 
 ---
@@ -16,6 +16,7 @@ Health Module 提供标准的健康检查端点，用于：
 - 💾 **数据库连接检查** - 验证数据库连接是否健康
 - 🧠 **内存使用监控** - 检查堆内存和 RSS 内存使用
 - ⚖️ **负载均衡器集成** - 支持 K8s、Docker Swarm 等编排工具
+- 📦 **版本信息查询** - 获取应用版本和运行时状态
 
 ---
 
@@ -230,6 +231,53 @@ curl -X GET "http://localhost:3000/api/v1/health/live"
 
 ```bash
 curl -X GET "http://localhost:3000/api/v1/health/ready"
+```
+
+---
+
+### 4. 版本信息
+
+**GET** `/api/v1/health/version`
+
+获取应用版本信息和运行时状态。用于调试、监控和版本追踪。
+
+**认证要求:** ❌ 公开访问
+
+**响应示例:**
+
+```json
+{
+  "name": "whale-conservation-api",
+  "version": "0.1.0",
+  "description": "鲸类保护公益组织管理系统 - 后端 API",
+  "nodeVersion": "v20.11.0",
+  "uptime": 3600,
+  "timestamp": "2026-03-31T12:00:00.000Z"
+}
+```
+
+**字段说明:**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `name` | `string` | 应用名称 |
+| `version` | `string` | 应用版本号 (SemVer) |
+| `description` | `string` | 应用描述 |
+| `nodeVersion` | `string` | Node.js 运行时版本 |
+| `uptime` | `number` | 进程运行时长 (秒) |
+| `timestamp` | `string` | 响应时间戳 (ISO 8601) |
+
+**使用场景:**
+
+- 部署后验证版本是否正确
+- 监控多个实例的版本一致性
+- 调试时确认运行环境
+- CI/CD 流水线版本校验
+
+**cURL 示例:**
+
+```bash
+curl -X GET "http://localhost:3000/api/v1/health/version"
 ```
 
 ---
