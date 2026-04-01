@@ -12,6 +12,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Interceptors
+- **TimeoutInterceptor Tests** - 超时拦截器完整单元测试 (23 个测试用例), 覆盖:
+  - 默认超时时间 (30 秒) 内完成请求
+  - 自定义超时时间生效 (5 秒/60 秒/120 秒)
+  - 超时异常处理 (超时错误类型验证)
+  - @Timeout 装饰器元数据设置
+  - 实际场景测试 (健康检查/大数据导出/鲸鱼列表 API)
+  - 边界情况 (零超时/大超时/undefined/null)
+  - 错误处理 (处理器错误/HTTP 异常传递)
+  - RxJS 操作符验证 (timeout 操作符应用/observable 链完整)
+  - 性能测试 (快速请求/中等延迟请求)
+- 测试文件：`src/common/interceptors/timeout.interceptor.spec.ts`
+- 测试状态：✅ 23 tests passed
 - **CacheInterceptor Tests** - 缓存拦截器完整单元测试 (36 个测试用例), 覆盖:
   - GET 请求缓存命中/未命中场景
   - 非 GET 请求 (POST/PUT/DELETE/PATCH/HEAD/OPTIONS) 跳过缓存
