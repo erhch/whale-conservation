@@ -23,6 +23,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Real-world scenarios (filters, sorting, whale sighting data)
   - Edge cases and performance tests
 
+#### Guards
+- **JwtAuthGuard Tests** - JWT 认证守卫单元测试，覆盖：
+  - `@Public()` 装饰器公开路由验证
+  - 受保护路由的 JWT 认证委托
+  - 管理员路由保护
+  - 已认证/未认证用户访问场景
+  - 健康检查端点公开访问
+- **RolesGuard Tests** - RBAC 角色守卫单元测试，覆盖：
+  - 无角色要求/空角色数组场景
+  - 未认证用户拒绝访问
+  - 单角色/多角色 (OR 逻辑) 验证
+  - ADMIN/RESEARCHER/VOLUNTEER 角色场景
+  - 边缘情况处理 (用户对象缺少 role 属性)
+- **Guards 文档更新** - 添加测试覆盖章节到 `docs/guards.md`
+
 ### Planned
 - Stats API dashboard integration
 - Enhanced reporting features
