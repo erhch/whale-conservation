@@ -63,6 +63,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 种群增长趋势预测 (`/population/growth-trend`)
 - 每个端点包含请求示例、响应示例和完整字段说明
 
+#### Tests
+- **Decorators 单元测试** - 装饰器模块完整测试覆盖 (24 个测试用例):
+  - `@Public()` 装饰器测试 (5 cases) - 元数据设置、类/方法级别应用、组合使用
+  - `@Roles()` 装饰器测试 (9 cases) - 单/多角色设置、值验证、边界情况
+  - `@CurrentUser()` 装饰器测试 (10 cases) - 参数提取、类型支持、控制器集成
+- 测试文件：`src/common/decorators/tests/*.spec.ts`
+- 测试状态：✅ 24 tests passed
+
 ### Planned
 - Stats API dashboard integration
 - Enhanced reporting features
