@@ -92,7 +92,7 @@ export class StationsService {
 
   async findActive(): Promise<Station[]> {
     return this.stationRepository.find({
-      where: { status: 'active' },
+      where: { status: StationStatus.ACTIVE },
     });
   }
 

@@ -20,8 +20,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { StationsService, StationsFilter } from './stations.service';
 import { Station, StationType, StationStatus } from './entities/station.entity';
 import { CreateStationDto, UpdateStationDto } from './dto/station.dto';
-import { CacheInterceptor } from '../common/interceptors/cache.interceptor';
-import { CacheTTL } from '../common/decorators/cache-ttl.decorator';
+import { CacheInterceptor, CacheTTL } from '../common/interceptors/cache.interceptor';
 import { ParseOptionalIntPipe } from '../common/pipes/parse-optional-int.pipe';
 import { Public } from '../common/decorators/public.decorator';
 
