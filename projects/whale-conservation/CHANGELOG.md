@@ -53,6 +53,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Common Pipes
 - `ParseJSONPipe` - JSON string parsing with optional validation support
+- **ParseEmailPipe Fix** - 修复验证前未修剪空格的问题，现在先 trim() 再验证
+- **ParseEmailPipe Tests** - 邮箱验证管道完整单元测试 (51 个测试用例), 覆盖:
+  - 标准邮箱格式验证 (常见格式/点号/加号标签/下划线/连字符/数字)
+  - 大小写处理 (自动转换为小写)
+  - 空格处理 (首尾空格自动修剪)
+  - 必填/可选模式行为
+  - 无效格式拒绝 (无@符号/无用户名/无域名/多@符号/空格/特殊字符)
+  - 边界情况 (单字符用户名/域名/长用户名/多级子域名)
+  - RFC 5322 特殊字符支持 (.%#$&'*+/=?^_`{|}~-)
+  - 实际使用场景 (常见邮箱服务商/企业邮箱/教育机构/政府机构)
+  - 性能测试 (100 个验证<100ms)
+- 测试文件：`src/common/pipes/parse-email.pipe.spec.ts`
+- 测试状态：✅ 51 tests passed
 - **ParseJSONPipe Tests** - Comprehensive unit tests (40 test cases) covering:
   - Basic JSON parsing (objects, arrays, primitives, nested structures)
   - Unicode and special character handling

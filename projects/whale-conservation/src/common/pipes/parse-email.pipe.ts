@@ -47,11 +47,14 @@ export class ParseEmailPipe implements PipeTransform<string | undefined, string>
       throw new BadRequestException('邮箱地址是必填项，请提供有效的邮箱地址');
     }
 
+    // 先去除首尾空格
+    const trimmed = value.trim();
+
     // 验证邮箱格式
-    if (!this.emailRegex.test(value)) {
+    if (!this.emailRegex.test(trimmed)) {
       throw new BadRequestException(`${value} 不是有效的邮箱地址格式`);
     }
 
-    return value.toLowerCase().trim();
+    return trimmed.toLowerCase();
   }
 }
