@@ -36,6 +36,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 实际场景测试 (鲸鱼列表 API/统计数据 API/POST 创建请求)
 - 测试文件：`src/common/interceptors/cache.interceptor.spec.ts`
 - 测试状态：✅ 36 tests passed
+- **ETagInterceptor Tests** - ETag 条件请求拦截器完整单元测试 (37 个测试用例), 覆盖:
+  - 基本功能 (GET/HEAD 请求处理，非 GET/HEAD 请求跳过)
+  - 空响应处理 (null/undefined/空对象)
+  - 已存在 ETag 跳过逻辑
+  - If-None-Match 条件请求匹配 (单 ETag/多 ETag/通配符*/带空格)
+  - 304 Not Modified 响应处理
+  - 弱验证 ETag 生成与匹配 (W/前缀处理)
+  - @ETag 装饰器元数据设置
+  - ETag 生成一致性验证 (相同数据/不同数据/各种数据类型)
+  - Vary 头自动设置
+  - 实际场景测试 (鲸鱼列表 API/统计数据 API/分页响应)
+  - 边界情况 (空字符串/大对象/特殊字符/Unicode emoji)
+- 测试文件：`src/common/interceptors/etag.interceptor.spec.ts`
+- 测试状态：✅ 37 tests passed
 
 #### Common Pipes
 - `ParseJSONPipe` - JSON string parsing with optional validation support
