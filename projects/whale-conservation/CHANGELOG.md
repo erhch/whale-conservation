@@ -11,6 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Interceptors
+- **CacheInterceptor Tests** - 缓存拦截器完整单元测试 (36 个测试用例), 覆盖:
+  - GET 请求缓存命中/未命中场景
+  - 非 GET 请求 (POST/PUT/DELETE/PATCH/HEAD/OPTIONS) 跳过缓存
+  - 自定义缓存键 (@CacheKey 装饰器)
+  - 自定义缓存时间 (@CacheTTL 装饰器)
+  - 缓存过期逻辑验证
+  - clearCache/clearAllCache/getCacheStats 方法测试
+  - 空响应/数组/复杂嵌套对象处理
+  - 特殊字符 URL 缓存键处理
+  - 实际场景测试 (鲸鱼列表 API/统计数据 API/POST 创建请求)
+- 测试文件：`src/common/interceptors/cache.interceptor.spec.ts`
+- 测试状态：✅ 36 tests passed
+
 #### Common Pipes
 - `ParseJSONPipe` - JSON string parsing with optional validation support
 - **ParseJSONPipe Tests** - Comprehensive unit tests (40 test cases) covering:
