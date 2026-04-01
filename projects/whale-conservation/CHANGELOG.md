@@ -11,6 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Pipes
+- **ParseUUIDPipe Tests** - UUID 验证管道完整单元测试 (51 个测试用例), 覆盖:
+  - 基本 UUID 验证 (v1-v5 格式支持，大小写不敏感)
+  - 必填模式 (required: true) - undefined/null/空字符串抛出异常
+  - 可选模式 (required: false) - 空值返回 undefined
+  - 版本特定验证 (v1/v4/v5 pipe 严格版本匹配)
+  - 无效 UUID 格式检测 (13 种无效场景)
+  - 边界情况 (v2 罕见版本，最小/最大 UUID v4, variant 位验证)
+  - 实际场景测试 (userId/orderId/recordId/sessionId 验证)
+  - UUID 版本检测正则验证
+- 测试文件：`src/common/pipes/parse-uuid.pipe.spec.ts`
+- 测试状态：✅ 51 tests passed
+
 #### Interceptors
 - **TimeoutInterceptor Tests** - 超时拦截器完整单元测试 (23 个测试用例), 覆盖:
   - 默认超时时间 (30 秒) 内完成请求
