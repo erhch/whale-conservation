@@ -62,6 +62,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 鲸鱼迁徙轨迹分析 (`/whales/:whaleId/migration`)
   - 种群增长趋势预测 (`/population/growth-trend`)
 - 每个端点包含请求示例、响应示例和完整字段说明
+- **ParsePhonePipe 文档更新** - `docs/parse-phone-pipe.md` 添加完整单元测试覆盖章节:
+  - 测试分类说明 (标准格式、必填/可选、国际格式、边界情况、错误消息)
+  - 50+ 测试用例覆盖详情
+  - 测试示例代码
+  - 测试运行命令
+  - 测试覆盖率目标表格
 
 #### Tests
 - **Decorators 单元测试** - 装饰器模块完整测试覆盖 (24 个测试用例):
