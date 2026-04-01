@@ -48,6 +48,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 边缘情况处理 (用户对象缺少 role 属性)
 - **Guards 文档更新** - 添加测试覆盖章节到 `docs/guards.md`
 
+#### Documentation
+- **Stats API 文档完善** - `docs/stats-api.md` 从 5 个端点扩展至 19 个端点，新增:
+  - 鲸鱼生命状态分布 (`/whales/status`)
+  - 鲸鱼性别分布 (`/whales/sex`)
+  - 物种出现频率 (`/species/frequency`)
+  - 热门观测地点排行 (`/locations/top`)
+  - 周度/月度/季度/年度观测统计
+  - 活跃鲸鱼个体排行 (`/whales/active`)
+  - 最近观测记录 (`/sightings/recent`，支持分页)
+  - 物种详细统计 (`/species/:speciesId`)
+  - 观测行为分布 (`/sightings/behaviors`)
+  - 鲸鱼迁徙轨迹分析 (`/whales/:whaleId/migration`)
+  - 种群增长趋势预测 (`/population/growth-trend`)
+- 每个端点包含请求示例、响应示例和完整字段说明
+
 ### Planned
 - Stats API dashboard integration
 - Enhanced reporting features
