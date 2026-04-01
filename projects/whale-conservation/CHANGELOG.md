@@ -22,6 +22,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Custom validation functions
   - Real-world scenarios (filters, sorting, whale sighting data)
   - Edge cases and performance tests
+- **ParsePhonePipe Tests** - 手机号验证管道单元测试 (50+ 测试用例), 覆盖:
+  - 标准 11 位手机号格式验证
+  - 所有有效号段测试 (13x-19x)
+  - 必填/可选模式行为
+  - 国际格式 (+86) 支持
+  - 自动格式化 (空格/连字符去除)
+  - 无效格式拒绝
+  - 错误消息清晰度
+  - 边界情况和性能测试
+  - 实际使用场景覆盖
 
 #### Guards
 - **JwtAuthGuard Tests** - JWT 认证守卫单元测试，覆盖：
