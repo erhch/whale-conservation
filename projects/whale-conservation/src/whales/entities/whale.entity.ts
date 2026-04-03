@@ -90,6 +90,9 @@ export class Whale {
   @OneToMany(() => import('../../whale-health/entities/whale-health-record.entity').WhaleHealthRecord, (record) => record.whale)
   healthRecords: import('../../whale-health/entities/whale-health-record.entity').WhaleHealthRecord[];
 
+  @OneToMany(() => import('../../behavior-logs/entities/behavior-log.entity').BehaviorLog, (log) => log.whale)
+  behaviorLogs: import('../../behavior-logs/entities/behavior-log.entity').BehaviorLog[];
+
   @CreateDateColumn()
   createdAt: Date;
 
