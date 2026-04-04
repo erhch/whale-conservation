@@ -96,6 +96,9 @@ export class Whale {
   @OneToMany(() => import('../../feeding-logs/entities/feeding-log.entity').FeedingLog, (log) => log.whale)
   feedingLogs: import('../../feeding-logs/entities/feeding-log.entity').FeedingLog[];
 
+  @OneToMany(() => import('../../genealogy/entities/genealogy-record.entity').GenealogyRecord, (record) => record.whale)
+  genealogyRecords: import('../../genealogy/entities/genealogy-record.entity').GenealogyRecord[];
+
   @CreateDateColumn()
   createdAt: Date;
 
