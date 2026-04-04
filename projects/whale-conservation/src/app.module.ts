@@ -17,6 +17,7 @@ import { HealthModule } from './health/health.module';
 import { EnvironmentModule } from './environment/environment.module';
 import { WhaleHealthModule } from './whale-health/whale-health.module';
 import { BehaviorLogsModule } from './behavior-logs/behavior-logs.module';
+import { FeedingLogsModule } from './feeding-logs/feeding-logs.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { BehaviorLogsModule } from './behavior-logs/behavior-logs.module';
     EnvironmentModule,
     WhaleHealthModule,
     BehaviorLogsModule,
+    FeedingLogsModule,
   ],
 })
 export class AppModule {}
