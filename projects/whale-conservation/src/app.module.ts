@@ -20,6 +20,7 @@ import { BehaviorLogsModule } from './behavior-logs/behavior-logs.module';
 import { FeedingLogsModule } from './feeding-logs/feeding-logs.module';
 import { GenealogyModule } from './genealogy/genealogy.module';
 import { ExportModule } from './export/export.module';
+import { ImportModule } from './import/import.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { ExportModule } from './export/export.module';
     FeedingLogsModule,
     GenealogyModule,
     ExportModule,
+    ImportModule,
   ],
 })
 export class AppModule {}
