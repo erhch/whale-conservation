@@ -22,6 +22,7 @@ import { GenealogyModule } from './genealogy/genealogy.module';
 import { ExportModule } from './export/export.module';
 import { ImportModule } from './import/import.module';
 import { SearchModule } from './search/search.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { SearchModule } from './search/search.module';
     ExportModule,
     ImportModule,
     SearchModule,
+    AuditModule,
   ],
 })
 export class AppModule {}
