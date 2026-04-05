@@ -19,6 +19,7 @@ import { WhaleHealthModule } from './whale-health/whale-health.module';
 import { BehaviorLogsModule } from './behavior-logs/behavior-logs.module';
 import { FeedingLogsModule } from './feeding-logs/feeding-logs.module';
 import { GenealogyModule } from './genealogy/genealogy.module';
+import { ExportModule } from './export/export.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { GenealogyModule } from './genealogy/genealogy.module';
     BehaviorLogsModule,
     FeedingLogsModule,
     GenealogyModule,
+    ExportModule,
   ],
 })
 export class AppModule {}
