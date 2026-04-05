@@ -21,6 +21,7 @@ import { FeedingLogsModule } from './feeding-logs/feeding-logs.module';
 import { GenealogyModule } from './genealogy/genealogy.module';
 import { ExportModule } from './export/export.module';
 import { ImportModule } from './import/import.module';
+import { SearchModule } from './search/search.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { ImportModule } from './import/import.module';
     GenealogyModule,
     ExportModule,
     ImportModule,
+    SearchModule,
   ],
 })
 export class AppModule {}
