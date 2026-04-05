@@ -23,6 +23,7 @@ import { ExportModule } from './export/export.module';
 import { ImportModule } from './import/import.module';
 import { SearchModule } from './search/search.module';
 import { AuditModule } from './audit/audit.module';
+import { BatchModule } from './batch/batch.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { AuditModule } from './audit/audit.module';
     ImportModule,
     SearchModule,
     AuditModule,
+    BatchModule,
   ],
 })
 export class AppModule {}
