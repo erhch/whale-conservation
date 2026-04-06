@@ -25,6 +25,7 @@ import { SearchModule } from './search/search.module';
 import { AuditModule } from './audit/audit.module';
 import { BatchModule } from './batch/batch.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     AuditModule,
     BatchModule,
     NotificationsModule,
+    AdminModule,
   ],
 })
 export class AppModule {}
