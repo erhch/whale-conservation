@@ -4,6 +4,34 @@ version: '3.8'
 # 用于本地开发和测试环境快速部署
 
 services:
+  # NestJS API
+  api:
+    build:
+      context: ../src
+      dockerfile: ../docker/Dockerfile
+    container_name: whale-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      WHALE_DB_HOST: postgres
+      WHALE_DB_PORT: 5432
+      WHALE_DB_USER: whale_admin
+      WHALE_DB_PASSWORD: whale_secure_pwd_2026
+      WHALE_DB_NAME: whale_conservation
+      JWT_SECRET: whale-conservation-secret-key-change-in-production
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - whale-network
+
   # PostgreSQL - 主数据库 (带 PostGIS 和 TimescaleDB 扩展)
   postgres:
     image: timescale/timescaledb-ha:pg16

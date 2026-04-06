@@ -3,56 +3,36 @@
 
 FROM node:20-alpine AS base
 
-# 安装必要的系统依赖
-RUN apk add --no-cache \
-    python3 \
-    make \
-    g++ \
-    libc6-compat
+RUN apk add --no-cache python3 make g++ libc6-compat curl
 
-# 设置工作目录
 WORKDIR /app
 
-# 复制 package 文件
+# ---- Dependencies ----
+FROM base AS deps
 COPY package*.json ./
+RUN npm ci --only=production && npm cache clean --force
 
-# 安装依赖
-RUN npm ci --only=production
-
-# 复制源代码
+# ---- Builder ----
+FROM base AS builder
+COPY package*.json ./
+RUN npm ci
 COPY . .
+RUN npm run build
 
-# 构建应用 (如果有构建步骤)
-# RUN npm run build
+# ---- Production ----
+FROM base AS production
+ENV NODE_ENV=production
 
-# 暴露端口
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package.json ./
+
 EXPOSE 3000
 
-# 健康检查
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
-
-# 启动应用
-CMD ["node", "src/api/index.js"]
-
-# ============================================
-# 开发镜像 (可选)
-# ============================================
-FROM base AS development
-
-ENV NODE_ENV=development
-
-RUN npm install
-
-CMD ["npm", "run", "dev"]
-
-# ============================================
-# 生产镜像
-# ============================================
-FROM base AS production
-
-ENV NODE_ENV=production
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
 
 USER node
 
-CMD ["node", "src/api/index.js"]
+CMD ["node", "dist/main.js"]
