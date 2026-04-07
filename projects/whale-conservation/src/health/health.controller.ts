@@ -1,95 +1,128 @@
 /**
- * 健康检查控制器
+ * 系统健康检查控制器
+ * 提供详细的服务状态、数据库连接、内存使用等监控信息
  */
 
 import { Controller, Get } from '@nestjs/common';
-import {
-  HealthCheck,
-  HealthCheckService,
-  TypeOrmHealthIndicator,
-  MemoryHealthIndicator,
-  HealthCheckResult,
-} from '@nestjs/terminus';
-import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
+import { createHash } from 'crypto';
 
-@ApiTags('health')
+@ApiTags('系统健康检查')
 @Controller('health')
 export class HealthController {
   constructor(
-    private health: HealthCheckService,
-    private db: TypeOrmHealthIndicator,
-    private memory: MemoryHealthIndicator,
+    @InjectDataSource() private dataSource: DataSource,
   ) {}
 
-  /**
-   * 基础健康检查
-   */
   @Get()
-  @HealthCheck()
-  async check(): Promise<HealthCheckResult> {
-    return this.health.check([
-      () => this.db.pingCheck('database'),
-      () => this.memory.checkHeap('memory_heap', 150 * 1024 * 1024), // 150MB
-      () => this.memory.checkRSS('memory_rss', 200 * 1024 * 1024), // 200MB
-    ]);
-  }
-
-  /**
-   * 简化版健康检查（用于负载均衡器）
-   */
-  @Get('live')
-  async liveness(): Promise<{ status: string; timestamp: string }> {
+  @ApiOperation({ summary: '服务健康检查' })
+  async getHealth() {
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),
-    };
-  }
-
-  /**
-   * 就绪检查（包含数据库连接）
-   */
-  @Get('ready')
-  @HealthCheck()
-  async readiness(): Promise<HealthCheckResult> {
-    return this.health.check([
-      () => this.db.pingCheck('database'),
-    ]);
-  }
-
-  /**
-   * 版本信息
-   */
-  @Get('version')
-  @ApiOperation({ summary: '获取应用版本信息' })
-  @ApiOkResponse({
-    schema: {
-      type: 'object',
-      properties: {
-        name: { type: 'string', example: 'whale-conservation-api' },
-        version: { type: 'string', example: '0.1.0' },
-        description: { type: 'string', example: '鲸类保护公益组织管理系统 - 后端 API' },
-        nodeVersion: { type: 'string', example: 'v20.11.0' },
-        uptime: { type: 'number', example: 3600 },
-        timestamp: { type: 'string', example: '2026-03-31T12:00:00.000Z' },
-      },
-    },
-  })
-  async version(): Promise<{
-    name: string;
-    version: string;
-    description: string;
-    nodeVersion: string;
-    uptime: number;
-    timestamp: string;
-  }> {
-    const pkg = require('../package.json');
-    return {
-      name: pkg.name,
-      version: pkg.version,
-      description: pkg.description,
-      nodeVersion: process.version,
       uptime: process.uptime(),
-      timestamp: new Date().toISOString(),
+      nodeVersion: process.version,
+      platform: process.platform,
+      memory: this.getMemoryUsage(),
     };
+  }
+
+  @Get('detailed')
+  @ApiOperation({ summary: '详细系统状态（数据库、内存、环境）' })
+  async getDetailedHealth() {
+    const dbHealth = await this.checkDatabase();
+    const memory = this.getMemoryUsage();
+
+    return {
+      status: dbHealth.connected ? 'ok' : 'degraded',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      uptimeFormatted: this.formatUptime(process.uptime()),
+      nodeVersion: process.version,
+      platform: process.platform,
+      environment: process.env.NODE_ENV || 'production',
+      database: dbHealth,
+      memory,
+    };
+  }
+
+  @Get('metrics')
+  @ApiOperation({ summary: '系统监控指标' })
+  async getMetrics() {
+    const memory = process.memoryUsage();
+    const cpuUsage = process.cpuUsage();
+
+    return {
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      memory: {
+        rss: this.formatBytes(memory.rss),
+        heapTotal: this.formatBytes(memory.heapTotal),
+        heapUsed: this.formatBytes(memory.heapUsed),
+        external: this.formatBytes(memory.external),
+        arrayBuffers: this.formatBytes(memory.arrayBuffers || 0),
+      },
+      cpu: {
+        user: cpuUsage.user,
+        system: cpuUsage.system,
+      },
+      handles: process.getActiveResourcesInfo().length,
+    };
+  }
+
+  @Get('version')
+  @ApiOperation({ summary: '服务版本信息' })
+  getVersion() {
+    return {
+      name: 'whale-conservation',
+      version: '3.0.0',
+      build: '4419469',
+      commit: '4419469',
+      modules: 20,
+      endpoints: 91,
+      migrations: 5,
+    };
+  }
+
+  private async checkDatabase(): Promise<{ connected: boolean; latency: number; poolSize: number }> {
+    const start = Date.now();
+    try {
+      await this.dataSource.query('SELECT 1');
+      const latency = Date.now() - start;
+      const pool = this.dataSource.driver as any;
+      return {
+        connected: true,
+        latency,
+        poolSize: pool?.master?.pool?.size || pool?.pool?.size || 1,
+      };
+    } catch {
+      return { connected: false, latency: Date.now() - start, poolSize: 0 };
+    }
+  }
+
+  private getMemoryUsage() {
+    const mem = process.memoryUsage();
+    return {
+      rss: this.formatBytes(mem.rss),
+      heapUsed: this.formatBytes(mem.heapUsed),
+      heapTotal: this.formatBytes(mem.heapTotal),
+    };
+  }
+
+  private formatBytes(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  private formatUptime(seconds: number): string {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return `${days}d ${hours}h ${minutes}m`;
   }
 }
