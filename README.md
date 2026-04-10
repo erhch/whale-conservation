@@ -2,8 +2,8 @@
 
 > 一套面向野外鲸类科研团队的个体追踪与保护管理平台
 
-**版本:** 3.0.0  
-**状态:** 开发中  
+**版本:** 4.0.0  
+**状态:** 核心 API 已完成 ✅  
 **技术栈:** NestJS · PostgreSQL · TypeORM · Swagger  
 **许可证:** MIT  
 **仓库:** [github.com/erhch/whale-conservation](https://github.com/erhch/whale-conservation)
@@ -77,19 +77,34 @@
 |------|----------|------|
 | `batch` | `/batch` | 批量操作 (6个端点) |
 
+### Phase 7: 通知与告警 (1 个模块)
+
+| 模块 | 路由前缀 | 说明 |
+|------|----------|------|
+| `notifications` | `/notifications` | 通知/告警系统 (创建、列表、标记已读) |
+
+### Phase 8: 管理后台 (2 个模块)
+
+| 模块 | 路由前缀 | 说明 |
+|------|----------|------|
+| `admin` | `/admin` | 管理后台 API（用户管理、系统配置） |
+| `health` | `/health` | 健康检查 + 详细指标 |
+
 ---
 
 ## 📊 API 统计
 
-| Phase | 模块数 | API 端点 |
-|-------|--------|----------|
-| Phase 1 | 7 | ~30 |
-| Phase 2 | 4 | ~20 |
-| Phase 3 | 3 | 17 |
-| Phase 4 | 1 | 6 |
-| Phase 5 | 1 | 3 |
-| Phase 6 | 1 | 6 |
-| **总计** | **18** | **~82** |
+| Phase | 模块数 | API 端点 | 状态 |
+|-------|--------|----------|------|
+| Phase 1 | 7 | ~30 | ✅ 完成 |
+| Phase 2 | 4 | ~20 | ✅ 完成 |
+| Phase 3 | 3 | 17 | ✅ 完成 |
+| Phase 4 | 1 | 6 | ✅ 完成 |
+| Phase 5 | 1 | 3 | ✅ 完成 |
+| Phase 6 | 1 | 6 | ✅ 完成 |
+| Phase 7 | 1 | ~5 | ✅ 完成 |
+| Phase 8 | 2 | ~8 | ✅ 完成 |
+| **总计** | **20** | **~95** | **✅** |
 
 ---
 
@@ -130,12 +145,13 @@ npm run start:dev
 
 迁移文件位于 `database/migrations/`:
 
-| 文件 | 说明 |
-|------|------|
-| `001_initial_schema.sql` | 初始架构（用户、物种、鲸鱼、观测、环境） |
-| `002_phase2_individual_tracking.sql` | Phase 2 个体追踪（健康、行为、觅食） |
-| `003_phase2_genealogy.sql` | Phase 2 谱系管理（关系、家谱、基因） |
-| `004_phase5_audit.sql` | Phase 5 审计日志 |
+| 文件 | 说明 | 状态 |
+|------|------|------|
+| `001_initial_schema.sql` | 初始架构（用户、物种、鲸鱼、观测、环境） | ✅ |
+| `002_phase2_individual_tracking.sql` | Phase 2 个体追踪（健康、行为、觅食） | ✅ |
+| `003_phase2_genealogy.sql` | Phase 2 谱系管理（关系、家谱、基因） | ✅ |
+| `004_phase5_audit.sql` | Phase 5 审计日志 | ✅ |
+| `005_phase7_notifications.sql` | Phase 7 通知/告警 | ✅ |
 
 种子数据位于 `database/seeds/`:
 
@@ -201,6 +217,17 @@ Station (监测站点)
 - 审计日志自动记录所有写操作
 - 批量操作安全检查（关联数据保护）
 - 数据导出权限控制
+
+---
+
+## 🗺️ 后续规划
+
+| Phase | 内容 | 优先级 |
+|-------|------|--------|
+| Phase 9 | 前端管理后台 (Vue3/React) | 高 |
+| Phase 10 | 移动端 App | 中 |
+| Phase 11 | 照片识别 / AI 个体匹配 | 中 |
+| Phase 12 | API 开放平台 | 低 |
 
 ---
 
