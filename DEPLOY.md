@@ -16,7 +16,8 @@
 
 ```bash
 cd projects/whale-conservation/docker
-docker compose up -d
+docker compose up -d    # Docker Compose v2
+docker-compose up -d    # Docker Compose v1
 ```
 
 启动后服务地址：
