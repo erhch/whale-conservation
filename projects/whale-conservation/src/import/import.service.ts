@@ -5,7 +5,7 @@
 
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, QueryRunner } from 'typeorm';
+import { Repository, QueryRunner, DeepPartial } from 'typeorm';
 
 import { WhaleHealthRecord } from '../whale-health/entities/whale-health-record.entity';
 import { BehaviorLog } from '../behavior-logs/entities/behavior-log.entity';
@@ -51,7 +51,7 @@ export class ImportService {
   }
 
   /** 获取鲸鱼 ID */
-  private async getWhaleId(identifier: string): Promise<string> {
+  private async getWhaleId(identifier: string): Promise<string | null> {
     if (!identifier) return null;
     const whale = await this.whaleRepo.findOne({ where: { identifier } });
     return whale?.id || null;
@@ -85,7 +85,7 @@ export class ImportService {
           status: (status as any) || 'pending',
           recordDate: dateStr ? new Date(dateStr) : new Date(),
           location: location || null,
-        });
+        } as unknown as DeepPartial<WhaleHealthRecord>);
         await this.healthRepo.save(record);
         success++;
       } catch (e) {
@@ -124,7 +124,7 @@ export class ImportService {
           speed: speedStr ? parseFloat(speedStr) : null,
           groupSize: groupSizeStr ? parseInt(groupSizeStr) : null,
           notes: notes || null,
-        });
+        } as any);
         await this.behaviorRepo.save(log);
         success++;
       } catch (e) {
@@ -162,7 +162,7 @@ export class ImportService {
           feedingDuration: durationStr ? parseInt(durationStr) : null,
           feedingDepth: depthStr ? parseFloat(depthStr) : null,
           groupFeeding: groupFeedingStr === '是' || groupFeedingStr === 'true' || groupFeedingStr === '1',
-        });
+        } as any);
         await this.feedingRepo.save(log);
         success++;
       } catch (e) {

@@ -39,7 +39,7 @@ import { AdminModule } from './admin/admin.module';
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.WHALE_DB_HOST || 'localhost',
-      port: parseInt(process.env.WHALE_DB_PORT, 10) || 5432,
+      port: parseInt(process.env.WHALE_DB_PORT || '5432', 10),
       username: process.env.WHALE_DB_USER || 'postgres',
       password: process.env.WHALE_DB_PASSWORD || 'postgres',
       database: process.env.WHALE_DB_NAME || 'whale_conservation',

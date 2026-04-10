@@ -6,7 +6,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { GenealogyRecord, WhalePedigree } from '../entities/genealogy-record.entity';
+import { GenealogyRecord, WhalePedigree } from './entities/genealogy-record.entity';
 import { CreateGenealogyRecordDto } from './dto/create-genealogy-record.dto';
 import { UpdateGenealogyRecordDto } from './dto/update-genealogy-record.dto';
 

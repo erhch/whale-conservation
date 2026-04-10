@@ -3,7 +3,8 @@ import {
   ExecutionContext,
   Injectable,
   NestInterceptor,
-  TooManyRequestsException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { Reflector } from '@nestjs/core';
@@ -86,10 +87,11 @@ export class RateLimitInterceptor implements NestInterceptor {
     // 检查是否超出限制
     if (record.count >= limit) {
       const retryAfter = Math.ceil((record.resetTime - now) / 1000);
-      throw new TooManyRequestsException(`请求过于频繁，请 ${retryAfter} 秒后重试`, {
-        cause: new Error('Rate limit exceeded'),
-        description: `限制：${limit} 次/${ttl}秒`,
-      });
+      throw new HttpException(
+        { message: `请求过于频繁，请 ${retryAfter} 秒后重试`, description: `限制：${limit} 次/${ttl}秒` },
+        HttpStatus.TOO_MANY_REQUESTS,
+        { cause: new Error('Rate limit exceeded') },
+      );
     }
 
     // 增加计数

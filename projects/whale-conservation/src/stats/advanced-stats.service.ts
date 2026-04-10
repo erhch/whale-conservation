@@ -7,7 +7,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { WhaleHealthRecord } from '../whale-health/entities/whale-health-record.entity';
+import { WhaleHealthRecord, HealthStatus } from '../whale-health/entities/whale-health-record.entity';
 import { BehaviorLog, BehaviorType, BehaviorIntensity } from '../behavior-logs/entities/behavior-log.entity';
 import { FeedingLog, FeedingMethod, AppetiteLevel } from '../feeding-logs/entities/feeding-log.entity';
 import { GenealogyRecord, RelationshipType, ConfidenceLevel, ClanType } from '../genealogy/entities/genealogy-record.entity';
@@ -40,8 +40,8 @@ export class AdvancedStatsService {
       .createQueryBuilder('h')
       .select('h.status', 'status').addSelect('COUNT(*)', 'count')
       .groupBy('h.status').getRawMany();
-    const ongoing = await this.healthRepo.count({ where: { status: 'ongoing' } });
-    const critical = await this.healthRepo.count({ where: { status: 'critical' } });
+    const ongoing = await this.healthRepo.count({ where: { status: HealthStatus.ONGOING } });
+    const critical = await this.healthRepo.count({ where: { status: HealthStatus.CRITICAL } });
     const recent30 = await this.healthRepo.count({
       where: { recordDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
     });

@@ -119,6 +119,58 @@ export class HealthController {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 
+  /**
+   * Full health check - used by tests and external monitors
+   */
+  async check() {
+    const dbHealth = await this.checkDatabase();
+    const memory = this.getMemoryUsage();
+    return {
+      status: dbHealth.connected ? 'ok' : 'degraded',
+      info: {
+        database: { status: dbHealth.connected ? 'up' : 'down' },
+        memory_heap: { status: 'up' },
+        memory_rss: { status: 'up' },
+      },
+      error: {},
+      details: {
+        database: { status: dbHealth.connected ? 'up' : 'down' },
+        memory_heap: { status: 'up' },
+        memory_rss: { status: 'up' },
+      },
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      memory,
+    };
+  }
+
+  /**
+   * Liveness probe - simple alive check
+   */
+  liveness() {
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Readiness probe - checks database connectivity
+   */
+  async readiness() {
+    const dbHealth = await this.checkDatabase();
+    return {
+      status: dbHealth.connected ? 'ok' : 'error',
+      info: {
+        database: { status: dbHealth.connected ? 'up' : 'down' },
+      },
+      error: dbHealth.connected ? {} : { database: { status: 'down' } },
+      details: {
+        database: { status: dbHealth.connected ? 'up' : 'down' },
+      },
+    };
+  }
+
   private formatUptime(seconds: number): string {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);

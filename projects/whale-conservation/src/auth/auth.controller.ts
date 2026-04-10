@@ -13,6 +13,7 @@ import {
   HttpStatus,
   Query,
   ParseIntPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Request } from 'express';
@@ -90,8 +91,8 @@ export class AuthController {
   @ApiResponse({ status: 200, description: '获取成功' })
   @ApiResponse({ status: 403, description: '权限不足，仅限管理员' })
   async findAllUsers(
-    @Query('page', new ParseIntPipe({ optional: true, defaultValue: 1 })) page: number,
-    @Query('limit', new ParseIntPipe({ optional: true, defaultValue: 10 })) limit: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
     @Query('role') role?: UserRole,
     @Query('isActive') isActive?: boolean,
   ) {

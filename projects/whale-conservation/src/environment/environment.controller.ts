@@ -11,12 +11,11 @@ import {
   Body,
   Query,
   ParseUUIDPipe,
-  ParseOptionalIntPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { EnvironmentService } from './environment.service';
 import { CreateEnvironmentDto } from './dto/create-environment.dto';
-import { ParseISO8601Pipe } from '@/common/pipes';
+import { ParseISO8601Pipe, ParseOptionalIntPipe } from '@/common/pipes';
 
 @ApiTags('Environment - 环境日志')
 @Controller('api/v1/environment')

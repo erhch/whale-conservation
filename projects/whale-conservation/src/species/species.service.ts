@@ -57,7 +57,8 @@ export class SpeciesService {
 
   async create(createSpeciesDto: any): Promise<Species> {
     const species = this.speciesRepository.create(createSpeciesDto);
-    return this.speciesRepository.save(species);
+    const saved = await this.speciesRepository.save(species);
+    return Array.isArray(saved) ? saved[0] : saved;
   }
 
   async update(id: string, updateSpeciesDto: any): Promise<Species> {

@@ -7,9 +7,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
 
 import { Species } from '../species/entities/species.entity';
-import { Whale } from '../whales/entities/whale.entity';
+import { Whale, LifeStatus } from '../whales/entities/whale.entity';
 import { Sighting } from '../sightings/entities/sighting.entity';
-import { Station } from '../stations/entities/station.entity';
+import { Station, StationStatus } from '../stations/entities/station.entity';
 
 @Injectable()
 export class StatsService {
@@ -29,9 +29,9 @@ export class StatsService {
    */
   async getOverview() {
     const speciesCount = await this.speciesRepository.count({ where: { isActive: true } });
-    const whaleCount = await this.whaleRepository.count({ where: { lifeStatus: 'alive' } });
+    const whaleCount = await this.whaleRepository.count({ where: { lifeStatus: LifeStatus.ALIVE } });
     const sightingCount = await this.sightingRepository.count();
-    const stationCount = await this.stationRepository.count({ where: { status: 'active' } });
+    const stationCount = await this.stationRepository.count({ where: { status: StationStatus.ACTIVE } });
 
     const recentSightings = await this.sightingRepository.count({
       where: { observedAt: MoreThan(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)) }, // 最近 30 天
@@ -467,7 +467,7 @@ export class StatsService {
 
     // 获取存活个体数
     const aliveWhales = await this.whaleRepository.count({
-      where: { speciesId, lifeStatus: 'alive' },
+      where: { speciesId, lifeStatus: LifeStatus.ALIVE },
     });
 
     // 获取性别分布

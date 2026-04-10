@@ -16,7 +16,7 @@ export interface ParseEnumOptions<T = any> {
 }
 
 @Injectable()
-export class ParseEnumPipe<T = any> implements PipeTransform<string | undefined, T[keyof T] | undefined> {
+export class ParseEnumPipe<T extends Record<string, unknown> = Record<string, unknown>> implements PipeTransform<string | undefined, T[keyof T] | undefined> {
   private readonly enumType: T;
   private readonly defaultValue?: T[keyof T];
   private readonly required: boolean;

@@ -11,7 +11,7 @@ import {
   Index,
   CreateDateColumn,
 } from 'typeorm';
-import { Stations } from '../../stations/entities/station.entity';
+import { Station } from '../../stations/entities/station.entity';
 
 @Entity('environment_log')
 @Index(['station_id', 'recorded_at'])
@@ -20,8 +20,8 @@ export class EnvironmentLog {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Stations, { eager: true })
-  station: Stations;
+  @ManyToOne(() => Station, { eager: true })
+  station: Station;
 
   @Column({ type: 'uuid' })
   @Index()

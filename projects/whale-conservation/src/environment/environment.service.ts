@@ -4,7 +4,7 @@
 
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { EnvironmentLog } from './entities/environment.entity';
 import { CreateEnvironmentDto } from './dto/create-environment.dto';
 
@@ -94,10 +94,7 @@ export class EnvironmentService {
     return this.environmentRepository.find({
       where: {
         station_id: stationId,
-        recorded_at: {
-          $gte: startDate,
-          $lte: endDate,
-        },
+        recorded_at: Between(startDate, endDate),
       },
       order: { recorded_at: 'ASC' },
       take: limit,

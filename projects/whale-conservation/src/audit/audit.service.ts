@@ -5,7 +5,7 @@
 
 import { Injectable, Optional, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DeepPartial } from 'typeorm';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 
@@ -30,11 +30,18 @@ export class AuditService {
 
   async log(entry: AuditEntry): Promise<AuditLog> {
     const log = this.auditRepo.create({
-      ...entry,
+      userId: entry.userId,
+      action: entry.action,
+      entityType: entry.entityType,
+      entityId: entry.entityId,
+      oldValue: entry.oldValue,
+      newValue: entry.newValue,
+      metadata: entry.metadata,
       ipAddress: this.request?.ip || null,
       userAgent: this.request?.headers['user-agent'] as string || null,
-    });
-    return this.auditRepo.save(log);
+    } as unknown as DeepPartial<AuditLog>);
+    const saved = await this.auditRepo.save(log);
+    return Array.isArray(saved) ? saved[0] : saved;
   }
 
   /** 批量查询审计日志 */

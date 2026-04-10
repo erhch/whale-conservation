@@ -15,6 +15,10 @@ import {
 
 import { Species } from '../../species/entities/species.entity';
 import { Sighting } from '../../sightings/entities/sighting.entity';
+import { WhaleHealthRecord } from '../../whale-health/entities/whale-health-record.entity';
+import { BehaviorLog } from '../../behavior-logs/entities/behavior-log.entity';
+import { FeedingLog } from '../../feeding-logs/entities/feeding-log.entity';
+import { GenealogyRecord } from '../../genealogy/entities/genealogy-record.entity';
 
 export enum Sex {
   MALE = 'M',
@@ -87,17 +91,17 @@ export class Whale {
   @OneToMany(() => Sighting, (sighting) => sighting.whale)
   sightings: Sighting[];
 
-  @OneToMany(() => import('../../whale-health/entities/whale-health-record.entity').WhaleHealthRecord, (record) => record.whale)
-  healthRecords: import('../../whale-health/entities/whale-health-record.entity').WhaleHealthRecord[];
+  @OneToMany(() => WhaleHealthRecord, (record) => record.whale)
+  healthRecords: WhaleHealthRecord[];
 
-  @OneToMany(() => import('../../behavior-logs/entities/behavior-log.entity').BehaviorLog, (log) => log.whale)
-  behaviorLogs: import('../../behavior-logs/entities/behavior-log.entity').BehaviorLog[];
+  @OneToMany(() => BehaviorLog, (log) => log.whale)
+  behaviorLogs: BehaviorLog[];
 
-  @OneToMany(() => import('../../feeding-logs/entities/feeding-log.entity').FeedingLog, (log) => log.whale)
-  feedingLogs: import('../../feeding-logs/entities/feeding-log.entity').FeedingLog[];
+  @OneToMany(() => FeedingLog, (log) => log.whale)
+  feedingLogs: FeedingLog[];
 
-  @OneToMany(() => import('../../genealogy/entities/genealogy-record.entity').GenealogyRecord, (record) => record.whale)
-  genealogyRecords: import('../../genealogy/entities/genealogy-record.entity').GenealogyRecord[];
+  @OneToMany(() => GenealogyRecord, (record) => record.whale)
+  genealogyRecords: GenealogyRecord[];
 
   @CreateDateColumn()
   createdAt: Date;

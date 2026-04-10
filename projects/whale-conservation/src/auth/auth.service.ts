@@ -74,7 +74,7 @@ export class AuthService {
 
     // 更新登录信息
     user.lastLoginAt = new Date();
-    user.lastLoginIp = ip;
+    user.lastLoginIp = ip || '';
     await this.userRepository.save(user);
 
     const token = this.generateToken(user);

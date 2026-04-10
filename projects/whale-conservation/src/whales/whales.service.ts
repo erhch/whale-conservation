@@ -232,8 +232,9 @@ export class WhalesService {
 
     if (sightings.length > 0 && sightings[0].sightings) {
       for (const sighting of sightings[0].sightings) {
-        if (sighting.location && sighting.location.coordinates) {
-          const [lng, lat] = sighting.location.coordinates;
+        if (sighting.latitude != null && sighting.longitude != null) {
+          const lat = sighting.latitude;
+          const lng = sighting.longitude;
 
           // 更新边界框
           if (minLat === null || lat < minLat) minLat = lat;
@@ -270,7 +271,7 @@ export class WhalesService {
       whaleId,
       whaleName: whale.name,
       identifier: whale.identifier,
-      species: whale.species?.commonName?.zh || whale.species?.scientificName || null,
+      species: whale.species?.commonNameZh || whale.species?.scientificName || null,
       trackPoints,
       summary: {
         totalPoints: trackPoints.length,

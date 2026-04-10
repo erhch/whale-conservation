@@ -7,6 +7,7 @@ import {
   Controller, Get, Post, Put, Delete, Body, Param, Query,
   UseGuards, ParseIntPipe, ParseBoolPipe,
 } from '@nestjs/common';
+import { StationStatus } from '../stations/entities/station.entity';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -81,7 +82,7 @@ export class AdminController {
       this.notifRepo.count({ where: { status: 'pending' as any } }),
       this.notifRepo.count({ where: { status: 'pending' as any, priority: 'critical' as any } }),
       this.stationRepo.count(),
-      this.stationRepo.count({ where: { status: 'active' } }),
+      this.stationRepo.count({ where: { status: StationStatus.ACTIVE } }),
     ]);
 
     return {

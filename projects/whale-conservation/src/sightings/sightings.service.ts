@@ -356,7 +356,7 @@ export class SightingsService {
       s.whale?.name || '',
       s.whale?.species?.commonNameZh || '',
       s.station?.name || '',
-      s.observer?.name || '',
+      s.observer?.nickname || s.observer?.username || '',
       s.latitude.toString(),
       s.longitude.toString(),
       s.locationName || '',

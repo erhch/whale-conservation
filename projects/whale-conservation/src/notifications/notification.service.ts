@@ -5,7 +5,7 @@
 
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan, MoreThan, IsNull } from 'typeorm';
+import { Repository, LessThan, MoreThan, IsNull, In } from 'typeorm';
 
 import { Notification, NotificationType, NotificationPriority, NotificationStatus } from './entities/notification.entity';
 import { WhaleHealthRecord } from '../whale-health/entities/whale-health-record.entity';
@@ -209,7 +209,9 @@ export class NotificationService {
   /** 标记已读 */
   async markAsRead(id: string): Promise<Notification> {
     await this.notifRepo.update(id, { status: NotificationStatus.READ });
-    return this.notifRepo.findOne({ where: { id } });
+    const notif = await this.notifRepo.findOne({ where: { id } });
+    if (!notif) throw new Error(`Notification ${id} not found`);
+    return notif;
   }
 
   /** 批量标记已读 */
@@ -225,7 +227,9 @@ export class NotificationService {
       resolvedAt: new Date(),
       resolvedBy,
     });
-    return this.notifRepo.findOne({ where: { id } });
+    const notif = await this.notifRepo.findOne({ where: { id } });
+    if (!notif) throw new Error(`Notification ${id} not found`);
+    return notif;
   }
 
   /** 获取未读数量 */
