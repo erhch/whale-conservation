@@ -1,5 +1,3 @@
-version: '3.8'
-
 # 🐋 生物鲸创管理系统 - Docker Compose 配置
 # 用于本地开发和测试环境快速部署
 
@@ -23,7 +21,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
     ports:
-      - "3000:3000"
+      - "3001:3000"
     depends_on:
       postgres:
         condition: service_healthy
