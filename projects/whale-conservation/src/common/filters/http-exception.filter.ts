@@ -68,6 +68,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
       ? (exception.getResponse() as any)?.message || exception.message
       : '服务器内部错误';
 
+    // Log the actual error for debugging
+    console.error('AllExceptionsFilter caught:', exception);
+
     const errorResponse: ErrorResponse = {
       statusCode: status,
       timestamp: new Date().toISOString(),

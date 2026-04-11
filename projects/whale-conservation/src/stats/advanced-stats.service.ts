@@ -89,7 +89,7 @@ export class AdvancedStatsService {
     const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     const logs = await this.behaviorRepo
       .createQueryBuilder('b')
-      .where('b.observedAt >= :start', { start: startDate })
+      .where('b.sightedAt >= :start', { start: startDate })
       .getMany();
 
     const behaviorCounts: Record<string, number> = {};
@@ -128,8 +128,8 @@ export class AdvancedStatsService {
     const logs = await this.behaviorRepo
       .createQueryBuilder('b')
       .where('b.whaleId = :id', { id: whaleId })
-      .andWhere('b.observedAt >= :start', { start: startDate })
-      .orderBy('b.observedAt', 'DESC')
+      .andWhere('b.sightedAt >= :start', { start: startDate })
+      .orderBy('b.sightedAt', 'DESC')
       .getMany();
 
     const behaviorCounts: Record<string, number> = {};
@@ -138,7 +138,7 @@ export class AdvancedStatsService {
 
     for (const log of logs) {
       for (const b of log.behaviors) { behaviorCounts[b] = (behaviorCounts[b] || 0) + 1; }
-      const hour = log.observedAt.getHours();
+      const hour = log.sightedAt.getHours();
       if (hour >= 6 && hour < 12) timeOfDay.morning++;
       else if (hour >= 12 && hour < 18) timeOfDay.afternoon++;
       else if (hour >= 18 && hour < 21) timeOfDay.evening++;
@@ -167,7 +167,7 @@ export class AdvancedStatsService {
     const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     const logs = await this.feedingRepo
       .createQueryBuilder('f')
-      .where('f.observedAt >= :start', { start: startDate })
+      .where('f.sightedAt >= :start', { start: startDate })
       .getMany();
 
     const methodCounts: Record<string, number> = {};

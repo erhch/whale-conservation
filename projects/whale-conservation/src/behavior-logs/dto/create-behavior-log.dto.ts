@@ -20,7 +20,7 @@ export class CreateBehaviorLogDto {
 
   @ApiProperty({ description: '观测时间' })
   @IsDateString()
-  observedAt: string;
+  sightedAt: string;
 
   @ApiProperty({ description: '行为类型列表', enum: BehaviorType, isArray: true })
   @IsEnum(BehaviorType, { each: true })

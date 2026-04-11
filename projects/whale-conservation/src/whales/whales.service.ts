@@ -133,16 +133,16 @@ export class WhalesService {
       .leftJoinAndSelect('sighting.station', 'station')
       .leftJoinAndSelect('sighting.observer', 'observer')
       .where('whale.id = :whaleId', { whaleId })
-      .orderBy('sighting.observedAt', 'DESC')
+      .orderBy('sighting.sightedAt', 'DESC')
       .skip(skip)
       .take(limit);
 
     // 日期范围筛选
     if (startDate) {
-      queryBuilder.andWhere('sighting.observedAt >= :startDate', { startDate });
+      queryBuilder.andWhere('sighting.sightedAt >= :startDate', { startDate });
     }
     if (endDate) {
-      queryBuilder.andWhere('sighting.observedAt <= :endDate', { endDate });
+      queryBuilder.andWhere('sighting.sightedAt <= :endDate', { endDate });
     }
 
     const result = await queryBuilder.getManyAndCount();
@@ -164,7 +164,7 @@ export class WhalesService {
     identifier: string;
     species: string | null;
     trackPoints: Array<{
-      observedAt: Date;
+      sightedAt: Date;
       location: {
         type: string;
         coordinates: [number, number];
@@ -209,14 +209,14 @@ export class WhalesService {
       .leftJoinAndSelect('whale.sightings', 'sighting')
       .leftJoinAndSelect('sighting.station', 'station')
       .where('whale.id = :whaleId', { whaleId })
-      .andWhere('sighting.observedAt >= :startDate', { startDate })
-      .andWhere('sighting.observedAt <= :endDate', { endDate })
-      .orderBy('sighting.observedAt', 'ASC')
+      .andWhere('sighting.sightedAt >= :startDate', { startDate })
+      .andWhere('sighting.sightedAt <= :endDate', { endDate })
+      .orderBy('sighting.sightedAt', 'ASC')
       .getMany();
 
     // 提取轨迹点
     const trackPoints: Array<{
-      observedAt: Date;
+      sightedAt: Date;
       location: { type: string; coordinates: [number, number] };
       locationName: string | null;
       stationName: string | null;
@@ -247,7 +247,7 @@ export class WhalesService {
           locationSet.add(locKey);
 
           trackPoints.push({
-            observedAt: sighting.observedAt,
+            sightedAt: sighting.sightedAt,
             location: {
               type: 'Point',
               coordinates: [lng, lat],
@@ -263,8 +263,8 @@ export class WhalesService {
 
     // 计算日期范围
     const dateRange = {
-      start: trackPoints.length > 0 ? trackPoints[0].observedAt : null,
-      end: trackPoints.length > 0 ? trackPoints[trackPoints.length - 1].observedAt : null,
+      start: trackPoints.length > 0 ? trackPoints[0].sightedAt : null,
+      end: trackPoints.length > 0 ? trackPoints[trackPoints.length - 1].sightedAt : null,
     };
 
     return {

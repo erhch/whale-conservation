@@ -44,10 +44,10 @@ export class Whale {
   name: string; // 昵称
 
   @ManyToOne(() => Species, (species) => species.whales)
-  @JoinColumn({ name: 'species_id' })
+  @JoinColumn({ name: 'speciesId' })
   species: Species;
 
-  @Column({ name: 'species_id' })
+  @Column({ name: 'speciesId' })
   speciesId: string;
 
   @Column({

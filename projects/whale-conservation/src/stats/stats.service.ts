@@ -34,7 +34,7 @@ export class StatsService {
     const stationCount = await this.stationRepository.count({ where: { status: StationStatus.ACTIVE } });
 
     const recentSightings = await this.sightingRepository.count({
-      where: { observedAt: MoreThan(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)) }, // 最近 30 天
+      where: { sightedAt: MoreThan(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)) }, // 最近 30 天
     });
 
     return {
@@ -84,11 +84,11 @@ export class StatsService {
 
     const result = await this.sightingRepository
       .createQueryBuilder('sighting')
-      .select("DATE_TRUNC('day', sighting.observedAt)", 'date')
+      .select("DATE_TRUNC('day', sighting.sightedAt)", 'date')
       .addSelect('COUNT(sighting.id)', 'count')
-      .where('sighting.observedAt >= :startDate', { startDate })
-      .groupBy("DATE_TRUNC('day', sighting.observedAt)")
-      .orderBy("DATE_TRUNC('day', sighting.observedAt)", 'ASC')
+      .where('sighting.sightedAt >= :startDate', { startDate })
+      .groupBy("DATE_TRUNC('day', sighting.sightedAt)")
+      .orderBy("DATE_TRUNC('day', sighting.sightedAt)", 'ASC')
       .getRawMany();
 
     return result.map((item) => ({
@@ -270,11 +270,11 @@ export class StatsService {
 
     const result = await this.sightingRepository
       .createQueryBuilder('sighting')
-      .select("DATE_TRUNC('week', sighting.observedAt)", 'week')
+      .select("DATE_TRUNC('week', sighting.sightedAt)", 'week')
       .addSelect('COUNT(sighting.id)', 'count')
-      .where('sighting.observedAt >= :startDate', { startDate })
-      .groupBy("DATE_TRUNC('week', sighting.observedAt)")
-      .orderBy("DATE_TRUNC('week', sighting.observedAt)", 'ASC')
+      .where('sighting.sightedAt >= :startDate', { startDate })
+      .groupBy("DATE_TRUNC('week', sighting.sightedAt)")
+      .orderBy("DATE_TRUNC('week', sighting.sightedAt)", 'ASC')
       .getRawMany();
 
     return result.map((item) => ({
@@ -292,11 +292,11 @@ export class StatsService {
 
     const result = await this.sightingRepository
       .createQueryBuilder('sighting')
-      .select("DATE_TRUNC('month', sighting.observedAt)", 'month')
+      .select("DATE_TRUNC('month', sighting.sightedAt)", 'month')
       .addSelect('COUNT(sighting.id)', 'count')
-      .where('sighting.observedAt >= :startDate', { startDate })
-      .groupBy("DATE_TRUNC('month', sighting.observedAt)")
-      .orderBy("DATE_TRUNC('month', sighting.observedAt)", 'ASC')
+      .where('sighting.sightedAt >= :startDate', { startDate })
+      .groupBy("DATE_TRUNC('month', sighting.sightedAt)")
+      .orderBy("DATE_TRUNC('month', sighting.sightedAt)", 'ASC')
       .getRawMany();
 
     return result.map((item) => ({
@@ -314,11 +314,11 @@ export class StatsService {
 
     const result = await this.sightingRepository
       .createQueryBuilder('sighting')
-      .select("DATE_TRUNC('quarter', sighting.observedAt)", 'quarter')
+      .select("DATE_TRUNC('quarter', sighting.sightedAt)", 'quarter')
       .addSelect('COUNT(sighting.id)', 'count')
-      .where('sighting.observedAt >= :startDate', { startDate })
-      .groupBy("DATE_TRUNC('quarter', sighting.observedAt)")
-      .orderBy("DATE_TRUNC('quarter', sighting.observedAt)", 'ASC')
+      .where('sighting.sightedAt >= :startDate', { startDate })
+      .groupBy("DATE_TRUNC('quarter', sighting.sightedAt)")
+      .orderBy("DATE_TRUNC('quarter', sighting.sightedAt)", 'ASC')
       .getRawMany();
 
     return result.map((item) => ({
@@ -336,11 +336,11 @@ export class StatsService {
 
     const result = await this.sightingRepository
       .createQueryBuilder('sighting')
-      .select("DATE_TRUNC('year', sighting.observedAt)", 'year')
+      .select("DATE_TRUNC('year', sighting.sightedAt)", 'year')
       .addSelect('COUNT(sighting.id)', 'count')
-      .where('sighting.observedAt >= :startDate', { startDate })
-      .groupBy("DATE_TRUNC('year', sighting.observedAt)")
-      .orderBy("DATE_TRUNC('year', sighting.observedAt)", 'ASC')
+      .where('sighting.sightedAt >= :startDate', { startDate })
+      .groupBy("DATE_TRUNC('year', sighting.sightedAt)")
+      .orderBy("DATE_TRUNC('year', sighting.sightedAt)", 'ASC')
       .getRawMany();
 
     return result.map((item) => ({
@@ -363,11 +363,11 @@ export class StatsService {
       .addSelect('whale.name', 'name')
       .addSelect('species.commonNameZh', 'species')
       .addSelect('whale.lastSightedLocation', 'lastLocation')
-      .addSelect('MAX(sighting.observedAt)', 'lastSightedAt')
+      .addSelect('MAX(sighting.sightedAt)', 'lastSightedAt')
       .addSelect('COUNT(sighting.id)', 'count')
       .innerJoin('sighting.whale', 'whale')
       .innerJoin('whale.species', 'species')
-      .where('sighting.observedAt >= :startDate', { startDate })
+      .where('sighting.sightedAt >= :startDate', { startDate })
       .groupBy('whale.id')
       .addGroupBy('whale.identifier')
       .addGroupBy('whale.name')
@@ -397,7 +397,7 @@ export class StatsService {
     const result = await this.sightingRepository
       .createQueryBuilder('sighting')
       .select('sighting.id', 'id')
-      .addSelect('sighting.observedAt', 'observedAt')
+      .addSelect('sighting.sightedAt', 'sightedAt')
       .addSelect('sighting.location', 'location')
       .addSelect('sighting.behavior', 'behavior')
       .addSelect('sighting.groupSize', 'groupSize')
@@ -411,14 +411,14 @@ export class StatsService {
       .innerJoin('sighting.whale', 'whale')
       .innerJoin('whale.species', 'species')
       .leftJoin('sighting.station', 'station')
-      .orderBy('sighting.observedAt', 'DESC')
+      .orderBy('sighting.sightedAt', 'DESC')
       .limit(limit)
       .offset(offset)
       .getRawMany();
 
     return result.map((item) => ({
       id: item.id,
-      observedAt: item.observedAt,
+      sightedAt: item.sightedAt,
       location: item.location,
       behavior: item.behavior,
       groupSize: item.groupSize ? parseInt(item.groupSize, 10) : null,
@@ -491,7 +491,7 @@ export class StatsService {
       .createQueryBuilder('sighting')
       .innerJoin('sighting.whale', 'whale')
       .where('whale.speciesId = :speciesId', { speciesId })
-      .andWhere('sighting.observedAt >= :startDate', {
+      .andWhere('sighting.sightedAt >= :startDate', {
         startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
       })
       .getCount();
@@ -605,7 +605,7 @@ export class StatsService {
     const sightings = await this.sightingRepository
       .createQueryBuilder('sighting')
       .select('sighting.id', 'id')
-      .addSelect('sighting.observedAt', 'observedAt')
+      .addSelect('sighting.sightedAt', 'sightedAt')
       .addSelect('sighting.location', 'location')
       .addSelect('sighting.locationName', 'locationName')
       .addSelect('sighting.latitude', 'latitude')
@@ -616,14 +616,14 @@ export class StatsService {
       .addSelect('station.name', 'stationName')
       .leftJoin('sighting.station', 'station')
       .where('sighting.whaleId = :whaleId', { whaleId })
-      .andWhere('sighting.observedAt >= :startDate', { startDate })
-      .orderBy('sighting.observedAt', 'ASC')
+      .andWhere('sighting.sightedAt >= :startDate', { startDate })
+      .orderBy('sighting.sightedAt', 'ASC')
       .getRawMany();
 
     // 构建迁徙轨迹点
     const trajectory = sightings.map((item, index) => ({
       sequence: index + 1,
-      observedAt: item.observedAt,
+      sightedAt: item.sightedAt,
       location: item.locationName || item.location,
       coordinates: item.latitude && item.longitude
         ? {
@@ -681,13 +681,13 @@ export class StatsService {
         uniqueLocations: uniqueLocations.length,
         firstSighting: firstSighting
           ? {
-              date: firstSighting.observedAt,
+              date: firstSighting.sightedAt,
               location: firstSighting.locationName || firstSighting.location,
             }
           : null,
         lastSighting: lastSighting
           ? {
-              date: lastSighting.observedAt,
+              date: lastSighting.sightedAt,
               location: lastSighting.locationName || lastSighting.location,
             }
           : null,

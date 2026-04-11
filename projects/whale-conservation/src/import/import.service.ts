@@ -116,7 +116,7 @@ export class ImportService {
         const log = this.behaviorRepo.create({
           whaleId,
           observerId: defaultObserverId || null,
-          observedAt: dateStr ? new Date(dateStr) : new Date(),
+          sightedAt: dateStr ? new Date(dateStr) : new Date(),
           behaviors: behaviors as any,
           intensity: (intensity as any) || 'moderate',
           duration: durationStr ? parseInt(durationStr) : null,
@@ -155,7 +155,7 @@ export class ImportService {
         const log = this.feedingRepo.create({
           whaleId,
           observerId: defaultObserverId || null,
-          observedAt: dateStr ? new Date(dateStr) : new Date(),
+          sightedAt: dateStr ? new Date(dateStr) : new Date(),
           methods: methods as any,
           appetite: (appetite as any) || 'moderate',
           preySpecies: preySpecies || null,

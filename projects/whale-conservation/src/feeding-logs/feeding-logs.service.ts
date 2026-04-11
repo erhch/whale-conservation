@@ -33,10 +33,10 @@ export class FeedingLogsService {
     const query = this.feedingRepo.createQueryBuilder('log')
       .leftJoinAndSelect('log.whale', 'whale')
       .leftJoinAndSelect('log.observer', 'observer')
-      .orderBy('log.observedAt', 'DESC');
+      .orderBy('log.sightedAt', 'DESC');
     if (whaleId) query.andWhere('log.whaleId = :whaleId', { whaleId });
     if (method) query.andWhere(':method = ANY(log.methods)', { method });
-    if (startDate && endDate) query.andWhere('log.observedAt BETWEEN :start AND :end', { start: startDate, end: endDate });
+    if (startDate && endDate) query.andWhere('log.sightedAt BETWEEN :start AND :end', { start: startDate, end: endDate });
     const [data, total] = await query.skip((page - 1) * limit).take(limit).getManyAndCount();
     return { data, total };
   }

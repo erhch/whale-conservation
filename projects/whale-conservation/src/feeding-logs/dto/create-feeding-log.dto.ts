@@ -17,7 +17,7 @@ export class CreateFeedingLogDto {
 
   @ApiProperty({ description: '观测时间' })
   @IsDateString()
-  observedAt: string;
+  sightedAt: string;
 
   @ApiProperty({ description: '觅食方式', enum: FeedingMethod, isArray: true })
   @IsEnum(FeedingMethod, { each: true })

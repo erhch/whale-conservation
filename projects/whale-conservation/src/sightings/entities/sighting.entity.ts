@@ -22,28 +22,28 @@ export class Sighting {
   id: string;
 
   @ManyToOne(() => Whale, (whale) => whale.sightings)
-  @JoinColumn({ name: 'whale_id' })
+  @JoinColumn({ name: 'whaleId' })
   whale: Whale;
 
-  @Column({ name: 'whale_id', nullable: true })
+  @Column({ name: 'whaleId', nullable: true })
   whaleId: string | null;
 
   @ManyToOne(() => Station)
-  @JoinColumn({ name: 'station_id' })
+  @JoinColumn({ name: 'stationId' })
   station: Station;
 
-  @Column({ name: 'station_id', nullable: true })
+  @Column({ name: 'stationId', nullable: true })
   stationId: string | null;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'observer_id' })
+  @JoinColumn({ name: 'observerId' })
   observer: User;
 
-  @Column({ name: 'observer_id' })
+  @Column({ name: 'observerId' })
   observerId: string;
 
   @Column({ type: 'timestamptz' })
-  observedAt: Date; // 观测时间
+  sightedAt: Date; // 观测时间
 
   @Column()
   latitude: number; // 纬度

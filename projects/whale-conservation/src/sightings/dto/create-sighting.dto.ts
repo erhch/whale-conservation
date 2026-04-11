@@ -31,7 +31,7 @@ export class CreateSightingDto {
 
   @ApiProperty({ description: '观测时间', example: '2026-03-29T10:30:00Z' })
   @IsDateString()
-  observedAt: string;
+  sightedAt: string;
 
   @ApiProperty({ description: '纬度 (-90 到 90)', example: 22.3, minimum: -90, maximum: 90 })
   @IsNumber()

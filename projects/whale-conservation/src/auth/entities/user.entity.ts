@@ -38,7 +38,7 @@ export class User {
   nickname: string;
 
   @Column({ nullable: true })
-  avatar: string;
+  avatarUrl: string;
 
   @Column({
     type: 'enum',

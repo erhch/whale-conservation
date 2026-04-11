@@ -142,7 +142,7 @@ export class SightingsController {
   ): Promise<{
     data: Array<{
       id: string;
-      observedAt: Date;
+      sightedAt: Date;
       location: string;
       behavior: string | null;
       groupSize: number | null;

@@ -179,10 +179,10 @@ export class SearchService {
     if (q) query.andWhere('(b.notes ILIKE :q)', { q: `%${q}%` });
     if (behaviorType) query.andWhere(':type = ANY(b.behaviors)', { type: behaviorType });
     if (intensity) query.andWhere('b.intensity = :intensity', { intensity });
-    if (startDate && endDate) query.andWhere('b.observedAt BETWEEN :start AND :end', { start: new Date(startDate), end: new Date(endDate) });
+    if (startDate && endDate) query.andWhere('b.sightedAt BETWEEN :start AND :end', { start: new Date(startDate), end: new Date(endDate) });
     if (verified !== undefined) query.andWhere('b.isVerified = :verified', { verified });
 
-    query.orderBy('b.observedAt', 'DESC');
+    query.orderBy('b.sightedAt', 'DESC');
     const [data, total] = await query.skip(skip).take(take).getManyAndCount();
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
@@ -197,10 +197,10 @@ export class SearchService {
 
     if (q) query.andWhere('(f.notes ILIKE :q OR f.preySpecies ILIKE :q)', { q: `%${q}%` });
     if (feedingMethod) query.andWhere(':method = ANY(f.methods)', { method: feedingMethod });
-    if (startDate && endDate) query.andWhere('f.observedAt BETWEEN :start AND :end', { start: new Date(startDate), end: new Date(endDate) });
+    if (startDate && endDate) query.andWhere('f.sightedAt BETWEEN :start AND :end', { start: new Date(startDate), end: new Date(endDate) });
     if (verified !== undefined) query.andWhere('f.isVerified = :verified', { verified });
 
-    query.orderBy('f.observedAt', 'DESC');
+    query.orderBy('f.sightedAt', 'DESC');
     const [data, total] = await query.skip(skip).take(take).getManyAndCount();
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }

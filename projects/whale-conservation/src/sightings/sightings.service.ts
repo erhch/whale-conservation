@@ -24,7 +24,7 @@ export class SightingsService {
       .leftJoinAndSelect('sighting.whale', 'whale')
       .leftJoinAndSelect('sighting.station', 'station')
       .leftJoinAndSelect('sighting.observer', 'observer')
-      .orderBy('sighting.observedAt', 'DESC');
+      .orderBy('sighting.sightedAt', 'DESC');
 
     if (options?.whaleId) {
       queryBuilder.andWhere('sighting.whaleId = :whaleId', { whaleId: options.whaleId });
@@ -72,7 +72,7 @@ export class SightingsService {
     return this.sightingRepository.find({
       where: { whaleId },
       relations: ['station', 'observer'],
-      order: { observedAt: 'DESC' },
+      order: { sightedAt: 'DESC' },
     });
   }
 
@@ -98,10 +98,10 @@ export class SightingsService {
 
     // 日期范围筛选
     if (options?.startDate) {
-      queryBuilder.andWhere('sighting.observedAt >= :startDate', { startDate: options.startDate });
+      queryBuilder.andWhere('sighting.sightedAt >= :startDate', { startDate: options.startDate });
     }
     if (options?.endDate) {
-      queryBuilder.andWhere('sighting.observedAt <= :endDate', { endDate: options.endDate });
+      queryBuilder.andWhere('sighting.sightedAt <= :endDate', { endDate: options.endDate });
     }
     if (options?.whaleId) {
       queryBuilder.andWhere('sighting.whaleId = :whaleId', { whaleId: options.whaleId });
@@ -149,10 +149,10 @@ export class SightingsService {
     // 近 7 天观测趋势
     const recentTrend = await queryBuilder
       .clone()
-      .select("DATE_TRUNC('day', sighting.observedAt)::date", 'date')
+      .select("DATE_TRUNC('day', sighting.sightedAt)::date", 'date')
       .addSelect('COUNT(*)', 'count')
-      .andWhere("sighting.observedAt >= NOW() - INTERVAL '7 days'")
-      .groupBy("DATE_TRUNC('day', sighting.observedAt)::date")
+      .andWhere("sighting.sightedAt >= NOW() - INTERVAL '7 days'")
+      .groupBy("DATE_TRUNC('day', sighting.sightedAt)::date")
       .orderBy('date', 'ASC')
       .getRawMany();
 
@@ -193,7 +193,7 @@ export class SightingsService {
         '(sighting.locationName LIKE :term OR sighting.behavior LIKE :term OR sighting.notes LIKE :term)',
         { term: searchTerm },
       )
-      .orderBy('sighting.observedAt', 'DESC')
+      .orderBy('sighting.sightedAt', 'DESC')
       .getMany();
   }
 
@@ -206,7 +206,7 @@ export class SightingsService {
   async getRecent(limit: number = 10, offset: number = 0): Promise<{
     data: Array<{
       id: string;
-      observedAt: Date;
+      sightedAt: Date;
       location: string;
       behavior: string | null;
       groupSize: number | null;
@@ -235,7 +235,7 @@ export class SightingsService {
     const [results, total] = await this.sightingRepository
       .createQueryBuilder('sighting')
       .select('sighting.id', 'id')
-      .addSelect('sighting.observedAt', 'observedAt')
+      .addSelect('sighting.sightedAt', 'sightedAt')
       .addSelect('sighting.locationName', 'location')
       .addSelect('sighting.behavior', 'behavior')
       .addSelect('sighting.groupSize', 'groupSize')
@@ -249,14 +249,14 @@ export class SightingsService {
       .innerJoin('sighting.whale', 'whale')
       .innerJoin('whale.species', 'species')
       .leftJoin('sighting.station', 'station')
-      .orderBy('sighting.observedAt', 'DESC')
+      .orderBy('sighting.sightedAt', 'DESC')
       .limit(safeLimit)
       .offset(safeOffset)
       .getManyAndCount();
 
     const data = results.map((item: any) => ({
       id: item.id,
-      observedAt: item.observedAt,
+      sightedAt: item.sightedAt,
       location: item.location,
       behavior: item.behavior,
       groupSize: item.groupSize ? parseInt(item.groupSize, 10) : null,
@@ -304,14 +304,14 @@ export class SightingsService {
       .leftJoinAndSelect('sighting.whale', 'whale')
       .leftJoinAndSelect('sighting.station', 'station')
       .leftJoinAndSelect('sighting.observer', 'observer')
-      .orderBy('sighting.observedAt', 'DESC');
+      .orderBy('sighting.sightedAt', 'DESC');
 
     // 筛选条件
     if (options?.startDate) {
-      queryBuilder.andWhere('sighting.observedAt >= :startDate', { startDate: options.startDate });
+      queryBuilder.andWhere('sighting.sightedAt >= :startDate', { startDate: options.startDate });
     }
     if (options?.endDate) {
-      queryBuilder.andWhere('sighting.observedAt <= :endDate', { endDate: options.endDate });
+      queryBuilder.andWhere('sighting.sightedAt <= :endDate', { endDate: options.endDate });
     }
     if (options?.whaleId) {
       queryBuilder.andWhere('sighting.whaleId = :whaleId', { whaleId: options.whaleId });
@@ -351,7 +351,7 @@ export class SightingsService {
     // CSV 行数据
     const rows = sightings.map((s) => [
       s.id,
-      s.observedAt.toISOString(),
+      s.sightedAt.toISOString(),
       s.whale?.identifier || '',
       s.whale?.name || '',
       s.whale?.species?.commonNameZh || '',

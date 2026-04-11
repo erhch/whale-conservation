@@ -65,16 +65,16 @@ export class AdminController {
       this.whaleRepo.count({ where: { lifeStatus: 'alive' as any } }),
       this.whaleRepo.count({ where: { lifeStatus: 'deceased' as any } }),
       this.sightingRepo.count(),
-      this.sightingRepo.count({ where: { observedAt: MoreThan(thirtyDaysAgo) } }),
-      this.sightingRepo.count({ where: { observedAt: MoreThan(sevenDaysAgo) } }),
+      this.sightingRepo.count({ where: { sightedAt: MoreThan(thirtyDaysAgo) } }),
+      this.sightingRepo.count({ where: { sightedAt: MoreThan(sevenDaysAgo) } }),
       this.speciesRepo.count(),
       this.speciesRepo.count({ where: { isActive: true } }),
       this.healthRepo.count(),
       this.healthRepo.count({ where: { status: 'critical' as any } }),
       this.behaviorRepo.count(),
-      this.behaviorRepo.count({ where: { observedAt: MoreThan(sevenDaysAgo) } }),
+      this.behaviorRepo.count({ where: { sightedAt: MoreThan(sevenDaysAgo) } }),
       this.feedingRepo.count(),
-      this.feedingRepo.count({ where: { observedAt: MoreThan(sevenDaysAgo) } }),
+      this.feedingRepo.count({ where: { sightedAt: MoreThan(sevenDaysAgo) } }),
       this.genealogyRepo.count(),
       this.genealogyRepo.count({ where: { confidence: 'confirmed' as any } }),
       this.auditRepo.count(),
@@ -116,7 +116,7 @@ export class AdminController {
 
     // Unverified sightings older than 7 days
     const unverifiedSightings = await this.sightingRepo.count({
-      where: { isVerified: false, observedAt: LessThan(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) },
+      where: { isVerified: false, sightedAt: LessThan(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) },
     });
 
     // Whales without species

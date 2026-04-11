@@ -72,11 +72,11 @@ export class ExportService {
   async exportBehaviorLogs(format: 'csv' | 'json' = 'csv', whaleId?: string, days?: number): Promise<string | object> {
     const query = this.behaviorRepo.createQueryBuilder('b')
       .leftJoinAndSelect('b.whale', 'whale')
-      .orderBy('b.observedAt', 'DESC');
+      .orderBy('b.sightedAt', 'DESC');
     if (whaleId) query.andWhere('b.whaleId = :id', { id: whaleId });
     if (days) {
       const start = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-      query.andWhere('b.observedAt >= :start', { start });
+      query.andWhere('b.sightedAt >= :start', { start });
     }
     const logs = await query.getMany();
 
@@ -86,7 +86,7 @@ export class ExportService {
     const rows = logs.map(l => [
       l.id, l.whale?.identifier || '', (l.behaviors || []).join(';'), l.intensity,
       l.duration || '', l.depth || '', l.speed || '', l.groupSize || '',
-      l.observedAt.toISOString(), l.notes || '',
+      l.sightedAt.toISOString(), l.notes || '',
     ]);
     return this.toCsv(headers, rows);
   }
@@ -95,7 +95,7 @@ export class ExportService {
   async exportFeedingLogs(format: 'csv' | 'json' = 'csv', whaleId?: string): Promise<string | object> {
     const query = this.feedingRepo.createQueryBuilder('f')
       .leftJoinAndSelect('f.whale', 'whale')
-      .orderBy('f.observedAt', 'DESC');
+      .orderBy('f.sightedAt', 'DESC');
     if (whaleId) query.andWhere('f.whaleId = :id', { id: whaleId });
     const logs = await query.getMany();
 
@@ -105,7 +105,7 @@ export class ExportService {
     const rows = logs.map(l => [
       l.id, l.whale?.identifier || '', (l.methods || []).join(';'), l.appetite,
       l.preySpecies || '', l.feedingDuration || '', l.feedingDepth || '',
-      l.groupFeeding ? '是' : '否', l.observedAt.toISOString(),
+      l.groupFeeding ? '是' : '否', l.sightedAt.toISOString(),
     ]);
     return this.toCsv(headers, rows);
   }

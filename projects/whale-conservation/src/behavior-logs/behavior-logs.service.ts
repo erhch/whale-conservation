@@ -36,11 +36,11 @@ export class BehaviorLogsService {
     const query = this.behaviorRepo.createQueryBuilder('log')
       .leftJoinAndSelect('log.whale', 'whale')
       .leftJoinAndSelect('log.observer', 'observer')
-      .orderBy('log.observedAt', 'DESC');
+      .orderBy('log.sightedAt', 'DESC');
     
     if (whaleId) query.andWhere('log.whaleId = :whaleId', { whaleId });
     if (behaviorType) query.andWhere(':type = ANY(log.behaviors)', { type: behaviorType });
-    if (startDate && endDate) query.andWhere('log.observedAt BETWEEN :start AND :end', { start: startDate, end: endDate });
+    if (startDate && endDate) query.andWhere('log.sightedAt BETWEEN :start AND :end', { start: startDate, end: endDate });
     if (verified !== undefined) query.andWhere('log.isVerified = :verified', { verified });
     
     const [data, total] = await query.skip((page - 1) * limit).take(limit).getManyAndCount();

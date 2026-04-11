@@ -61,7 +61,7 @@ export class BehaviorLog {
   observerId: string;
 
   @Column({ type: 'timestamptz' })
-  observedAt: Date; // 观测时间
+  sightedAt: Date; // 观测时间
 
   @Column({
     type: 'enum',

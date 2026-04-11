@@ -56,7 +56,7 @@ export class FeedingLog {
   observerId: string;
 
   @Column({ type: 'timestamptz' })
-  observedAt: Date;
+  sightedAt: Date;
 
   @Column({
     type: 'enum',
