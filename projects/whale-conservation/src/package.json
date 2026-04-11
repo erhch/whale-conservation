@@ -75,6 +75,18 @@
     },
     "collectCoverageFrom": ["**/*.(t|j)s"],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/$1",
+      "^@common/(.*)$": "<rootDir>/common/$1",
+      "^@auth/(.*)$": "<rootDir>/auth/$1",
+      "^@species/(.*)$": "<rootDir>/species/$1",
+      "^@whales/(.*)$": "<rootDir>/whales/$1",
+      "^@sightings/(.*)$": "<rootDir>/sightings/$1",
+      "^@stations/(.*)$": "<rootDir>/stations/$1",
+      "^@stats/(.*)$": "<rootDir>/stats/$1",
+      "^@environment/(.*)$": "<rootDir>/environment/$1",
+      "^@health/(.*)$": "<rootDir>/health/$1"
+    }
   }
 }

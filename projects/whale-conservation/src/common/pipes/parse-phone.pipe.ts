@@ -64,17 +64,21 @@ export class ParsePhonePipe implements PipeTransform<string | undefined, string>
     const cleaned = value.replace(/[\s-]/g, '');
 
     // 选择正则表达式
-    const regex = this.allowInternational 
-      ? this.intlPhoneRegex 
-      : this.cnPhoneRegex;
-
-    // 验证格式
-    if (!regex.test(cleaned)) {
-      if (this.allowInternational) {
+    let regex: RegExp;
+    if (this.allowInternational) {
+      // 国际模式：支持 +86 前缀或纯 11 位
+      if (!this.intlPhoneRegex.test(cleaned) && !this.cnPhoneRegex.test(cleaned)) {
         throw new BadRequestException(
           `${value} 不是有效的手机号格式 (支持 11 位数字或 +86 开头的国际格式)`
         );
       }
+      return cleaned;
+    } else {
+      regex = this.cnPhoneRegex;
+    }
+
+    // 验证格式
+    if (!regex.test(cleaned)) {
       throw new BadRequestException(
         `${value} 不是有效的中国大陆手机号格式 (11 位数字，以 1 开头，第二位为 3-9)`
       );

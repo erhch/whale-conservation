@@ -20,8 +20,8 @@ const createMockReflector = () => ({
 // Helper function to create mock execution context
 function createMockContext(request: any): ExecutionContext {
   return {
-    getHandler: jest.fn(),
-    getClass: jest.fn(),
+    getHandler: jest.fn().mockReturnValue(() => {}),
+    getClass: jest.fn().mockReturnValue(class {}),
     switchToHttp: jest.fn().mockReturnValue({
       getRequest: jest.fn().mockReturnValue(request),
     }),
