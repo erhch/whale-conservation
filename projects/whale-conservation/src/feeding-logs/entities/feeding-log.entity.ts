@@ -88,7 +88,7 @@ export class FeedingLog {
   @Column({ nullable: true })
   groupFeeding: boolean; // 群体觅食
 
-  @Column({ nullable: true })
+  @Column({ type: 'simple-array', nullable: true })
   associatedWhales: string[]; // 同群体其他鲸鱼 ID
 
   @Column({ nullable: true })
@@ -103,10 +103,10 @@ export class FeedingLog {
   @Column({ type: 'text', nullable: true })
   notes: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'simple-array', nullable: true })
   photoUrls: string[];
 
-  @Column({ nullable: true })
+  @Column({ type: 'simple-array', nullable: true })
   videoUrls: string[];
 
   @Column({ default: true })

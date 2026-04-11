@@ -93,16 +93,16 @@ export class BehaviorLog {
   @Column({ nullable: true })
   groupSize: number; // 同群体个体数
 
-  @Column({ nullable: true })
+  @Column({ type: 'simple-array', nullable: true })
   associatedWhales: string[]; // 同群体其他鲸鱼 ID
 
   @Column({ type: 'text', nullable: true })
   notes: string; // 详细备注
 
-  @Column({ nullable: true })
+  @Column({ type: 'simple-array', nullable: true })
   photoUrls: string[]; // 观测照片
 
-  @Column({ nullable: true })
+  @Column({ type: 'simple-array', nullable: true })
   videoUrls: string[]; // 观测视频
 
   @Column({ nullable: true })

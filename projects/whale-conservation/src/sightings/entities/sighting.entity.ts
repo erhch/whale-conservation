@@ -63,7 +63,7 @@ export class Sighting {
   @Column({ type: 'text', nullable: true })
   notes: string; // 备注
 
-  @Column({ nullable: true })
+  @Column({ type: 'simple-array', nullable: true })
   photoUrls: string[]; // 照片 URLs
 
   @Column({ nullable: true })

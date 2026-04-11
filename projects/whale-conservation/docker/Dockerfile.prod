@@ -1,0 +1,26 @@
+# 🐋 鲸创管理系统 - 生产 Dockerfile
+# 本地构建 + 复制部署，无需 Docker 内编译
+
+FROM node:20-alpine
+
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+# 先复制 package.json
+COPY package*.json ./
+
+# 安装生产依赖
+RUN npm ci --only=production && npm cache clean --force
+
+# 复制构建产物
+COPY dist ./dist
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:3000/api/v1/health || exit 1
+
+USER node
+
+CMD ["node", "dist/main.js"]

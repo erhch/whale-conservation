@@ -6,7 +6,7 @@ services:
   api:
     build:
       context: ../src
-      dockerfile: ../docker/Dockerfile
+      dockerfile: ../docker/Dockerfile.prod
     container_name: whale-api
     restart: unless-stopped
     environment:
